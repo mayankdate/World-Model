@@ -1,0 +1,168 @@
+{
+  "params": {
+    "Topt": {
+      "name": "GDP optimum temperature",
+      "unit": "°C",
+      "default": 13,
+      "min": 13,
+      "max": 16,
+      "step": 0.1,
+      "se": 0.75,
+      "cite": "Burke, Hsiang & Miguel 2015 (Nature 527:235); Kotz et al. ~15.8°C"
+    },
+    "bhmCurv": {
+      "name": "GDP–temp curvature",
+      "unit": "/°C²",
+      "default": 0.0005,
+      "min": 0,
+      "max": 0.001,
+      "step": 0,
+      "se": 0.0002,
+      "cite": "BHM 2015 quadratic term, SIGNED: colder-than-optimum countries gain from marginal warming (BHM's own pattern); 0 = Barker 2024 (Econ Journal Watch) null"
+    },
+    "bhmGainCap": {
+      "name": "Cap on climate growth GAIN",
+      "unit": "/yr",
+      "default": 0.02,
+      "min": 0,
+      "max": 0.05,
+      "step": 0.005,
+      "mc": false,
+      "cite": "Bounds the ANNUAL growth BONUS a colder-than-optimum country may receive. Damages are deliberately left uncapped (they self-limit; capping them broke the India -87% validation anchor). Calibrated so BHM's published country pattern is reproduced: at 0.02 we get India -87% / Nigeria -90% / Russia-Canada +265% against BHM's -87% / -92% / +419%,+247%."
+    },
+    "bhmGainShare": {
+      "name": "BHM cold-country gain",
+      "unit": "×",
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "mc": false,
+      "cite": "How much of BHM's GAIN side to apply (0 = damages only, 1 = full signed quadratic). BHM's raw quadratic gives countries far below the optimum a permanent multi-point annual growth bonus (Canada/Russia -> 800-1800x income by 2100), which is the literal form of the 'climate determinism' critique (Barker 2024). Default 1 (gains on, bounded by bhmGainCap). Setting it to 0 gives a damages-only world, which zeroes every country whose baseline sits below the optimum."
+    },
+    "prestonSlope": {
+      "name": "Preston curve slope",
+      "unit": "yr/ln$",
+      "default": 5,
+      "min": 3,
+      "max": 7,
+      "step": 0.1,
+      "se": 1,
+      "cite": "Preston 1975; replications give ~3–7 yr life-exp per ln(GDP/cap). Applied to WITHIN-country income changes — a structural reading of a cross-sectional curve (Preston's own decomposition attributes most secular LE gain to curve shifts, not movement along it)."
+    },
+    "carletonMort": {
+      "name": "Direct heat mortality",
+      "unit": "yr/°C",
+      "default": 0.2,
+      "min": 0,
+      "max": 0.6,
+      "step": 0.01,
+      "se": 0.15,
+      "cite": "Carleton et al. 2022 (QJE). Coefficient is the effect AT the $40k reference income; the income scaler moves it between 0.4x (rich) and 3x (poor) along the model's own coupled income path."
+    },
+    "fertIncome": {
+      "name": "Fertility–income response",
+      "unit": "births/ln$",
+      "default": -0.2,
+      "min": -0.4,
+      "max": 0,
+      "step": 0.01,
+      "se": 0.1,
+      "cite": "Demographic transition: TFR falls with income (Herzer et al. 2012)"
+    },
+    "mortPopFeedback": {
+      "name": "Heat-mortality → population",
+      "unit": "frac/yr/°C",
+      "default": 0.0008,
+      "min": 0,
+      "max": 0.003,
+      "step": 0.0001,
+      "se": 0.0008,
+      "cite": "Carleton et al. 2022 mortality response mapped to population loss; structural. Default × income scale × warming sits at/above Carleton's high-adaptation-gap range — read the upper half of this slider as 'limited adaptation'."
+    },
+    "gFrontier": {
+      "name": "Long-run frontier growth",
+      "unit": "/yr",
+      "default": 0.015,
+      "min": 0.005,
+      "max": 0.025,
+      "step": 0.001,
+      "se": 0.005,
+      "cite": "Baseline (not a coupling): per-capita growth every country converges toward. SSP2 GDP logic (Dellink et al. 2017); Pritchett & Summers 2014."
+    },
+    "tauConv": {
+      "name": "Growth convergence timescale",
+      "unit": "yr",
+      "default": 40,
+      "min": 15,
+      "max": 80,
+      "step": 5,
+      "se": 16.25,
+      "cite": "Baseline (not a coupling): e-folding time for recent national growth to fade toward the frontier rate (Pritchett & Summers 2014 regression to the mean)."
+    }
+  },
+  "edges": [
+    {
+      "id": "temp_to_gdp",
+      "from": "mean_temperature",
+      "to": "gdp_per_capita_ppp",
+      "form": "bhm_quadratic",
+      "uses": ["Topt", "bhmCurv"],
+      "kind": "empirical",
+      "desc": "Quadratic growth effect of warming relative to each country's baseline climate (BHM 2015). Damages (hotter-than-optimum countries) always apply; the GAIN side for colder-than-optimum countries is gated by bhmGainShare (default 0) and capped, because the raw quadratic compounds to implausible 2100 income levels for cold countries.",
+      "cite": "Burke, Hsiang & Miguel 2015, Nature 527:235",
+      "contested": "Country magnitudes large & contested (Barker 2024; 'climate determinism'). Curvature→0 reproduces the null."
+    },
+    {
+      "id": "gdp_to_le",
+      "from": "gdp_per_capita_ppp",
+      "to": "life_expectancy",
+      "form": "preston_log",
+      "uses": "prestonSlope",
+      "kind": "empirical",
+      "desc": "Life expectancy rises with log income (Preston curve), anchored to observed LE.",
+      "cite": "Preston 1975",
+      "contested": "Cross-sectional curve applied to within-country change; Preston's decomposition says most secular LE gain comes from curve shifts (technology), so this edge bounds the income channel only."
+    },
+    {
+      "id": "temp_to_le",
+      "from": "mean_temperature",
+      "to": "life_expectancy",
+      "form": "linear_marginal_scaled",
+      "uses": "carletonMort",
+      "kind": "empirical",
+      "desc": "Direct heat-mortality effect on life expectancy, scaled by the model's own coupled income path so impoverishment raises vulnerability and growth lowers it (adaptation).",
+      "cite": "Carleton et al. 2022, QJE (income-adjusted; national approximation)",
+      "contested": null
+    },
+    {
+      "id": "gdp_to_pop",
+      "from": "gdp_per_capita_ppp",
+      "to": "population_total",
+      "form": "fertility_income",
+      "uses": "fertIncome",
+      "kind": "empirical",
+      "desc": "Income change shifts fertility (demographic transition): rising GDP lowers fertility, bending population vs the UN baseline.",
+      "cite": "Demographic transition (Herzer, Strulik & Vollmer 2012)",
+      "contested": "Direction robust; magnitude varies by development stage."
+    },
+    {
+      "id": "temp_to_pop",
+      "from": "mean_temperature",
+      "to": "population_total",
+      "form": "heat_mortality_pop",
+      "uses": "mortPopFeedback",
+      "kind": "structural",
+      "desc": "Heat mortality removes population at an annual fraction rising with warming beyond baseline, income-scaled along the coupled income path.",
+      "cite": "Derived from Carleton et al. 2022; structural population mapping",
+      "contested": "Structural choice, not a directly fitted population coefficient."
+    }
+  ],
+  "notes": {
+    "driver": "Driven by mean_temperature (CMIP6 tas), never max_temperature — the BHM optimum is defined on annual-mean temperature.",
+    "uncertainty": "Bands are a joint Monte-Carlo (32 stratified draws): each coefficient's disputed range read as a 95% interval, crossed with the CMIP6 inter-model spread, propagated through the whole chain. Structural switches (mc = FALSE) are held at their set value, not sampled. Range-based coefficient uncertainty, not the papers' own SEs — stated, not hidden.",
+    "baseline": "GDP baseline growth converges from each country's recent observed rate to the frontier rate over ~tauConv years; the naive line uses the same baseline with all couplings zeroed, so the naive-vs-coupled gap isolates the coupling.",
+    "provenance": "Coefficients encoded from published headline values — verify against source before citing."
+  },
+  "version": "2026-08-24"
+}

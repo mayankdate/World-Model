@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizons</title>
+<style>
+  :root{
+    --bg:#0a0e13; --panel:#121922; --panel2:#0f1620; --hair:#243140; --hair2:#1a2530;
+    --ink:#eaf2f8; --dim:#8aa0b4; --faint:#5a6e80;
+    --accent:#37e0c8; --accent2:#ffd24a; --warn:#ff8a3d; --bad:#ff5d6c; --good:#46d98a;
+    /* bright categorical palette for countries, high contrast on dark */
+    --c0:#37e0c8; --c1:#ffd24a; --c2:#ff6ec7; --c3:#6ea8ff; --c4:#9d7bff;
+    --c5:#ff8a3d; --c6:#46d98a; --c7:#ff5d6c; --c8:#7af0ff; --c9:#c0e84a;
+    --c10:#ff9ecb; --c11:#b0b8c4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.5}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .wrap{max-width:1500px;margin:0 auto;padding:22px 22px 80px}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    border-bottom:1px solid var(--hair);padding-bottom:14px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-0.02em}
+  .tag{font-family:ui-monospace,monospace;font-size:10px;color:var(--accent);letter-spacing:0.16em;
+    text-transform:uppercase;border:1px solid var(--hair);padding:3px 8px;border-radius:3px;margin-left:10px}
+  .gen{font-family:ui-monospace,monospace;font-size:11px;color:var(--faint)}
+
+  /* filter bar */
+  .filter{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:14px 16px;margin:16px 0}
+  .filter .lab{font-family:ui-monospace,monospace;font-size:10px;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:ui-monospace,monospace;font-size:12px;padding:6px 11px;border-radius:16px;
+    border:1px solid var(--hair);background:var(--panel2);color:var(--dim);cursor:pointer;
+    transition:all .12s;display:flex;align-items:center;gap:7px}
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .chip.on{color:#06121a;font-weight:700;border-color:transparent}
+  .chip .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .row2{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .seg{display:flex;gap:0;border:1px solid var(--hair);border-radius:7px;overflow:hidden}
+  .seg button{font-family:ui-monospace,monospace;font-size:12px;padding:7px 13px;background:var(--panel2);
+    color:var(--dim);border:none;cursor:pointer;border-right:1px solid var(--hair)}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:var(--accent);color:#06121a;font-weight:700}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;margin-top:18px}
+  .tab{font-family:ui-monospace,monospace;font-size:12.5px;padding:11px 20px;border:1px solid var(--hair);
+    border-bottom:none;border-radius:8px 8px 0 0;background:var(--panel2);color:var(--dim);cursor:pointer}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:var(--panel);color:var(--ink);font-weight:700;border-color:var(--hair)}
+
+  .stage{background:var(--panel);border:1px solid var(--hair);border-radius:0 10px 10px 10px;padding:6px}
+
+  .panel{background:var(--panel2);border:1px solid var(--hair2);border-radius:9px;padding:16px 16px 10px;margin:10px}
+  .panel h3{font-size:15px;font-weight:700;margin-bottom:2px}
+  .panel .sub{color:var(--dim);font-size:12.5px;margin-bottom:10px;line-height:1.5;max-width:900px}
+  .panel .sub b{color:var(--ink)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  @media(max-width:1000px){.two{grid-template-columns:1fr}}
+
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .gridline{stroke:var(--hair2);stroke-width:1}
+  .gridline.decade{stroke:var(--hair)}
+  .axislab{fill:var(--faint);font-size:10px;font-family:ui-monospace,monospace}
+  .axistitle{fill:var(--dim);font-size:11px}
+  .nowline{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3;opacity:.9}
+  .nowtag{fill:var(--accent);font-size:10px;font-family:ui-monospace,monospace;font-weight:700}
+  .edgeline{stroke:var(--accent2);stroke-width:1;stroke-dasharray:2 3;opacity:.55}
+  .edgetag{fill:var(--accent2);font-size:9px;font-family:ui-monospace,monospace;opacity:.85}
+  .ageline{stroke:var(--faint);stroke-width:1;stroke-dasharray:2 4;opacity:.5}
+  .agetag{fill:var(--faint);font-size:9.5px;font-family:ui-monospace,monospace}
+  .thresh{stroke-dasharray:5 4;stroke-width:1;opacity:.6}
+  .threshlab{font-size:9.5px;font-family:ui-monospace,monospace}
+  .nodelab{font-size:9px;font-family:ui-monospace,monospace;fill:var(--dim)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:13px;padding:4px 6px 2px}
+  .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+  .lg .sw{width:16px;height:3px;border-radius:2px}
+
+  .tip{position:fixed;pointer-events:none;background:#05090d;border:1px solid var(--hair);
+    border-radius:7px;padding:9px 12px;font-size:12.5px;color:var(--ink);opacity:0;transition:opacity .08s;
+    z-index:80;box-shadow:0 8px 30px -6px #000;max-width:260px}
+  .tip .ty{font-family:ui-monospace,monospace;font-size:10px;color:var(--faint);text-transform:uppercase;
+    letter-spacing:.08em;margin-bottom:3px}
+  .tip .tv{font-family:ui-monospace,monospace;font-size:14px;font-weight:700}
+  .tip .tr{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .rep-controls{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:6px}
+  .ctl{display:flex;flex-direction:column;gap:5px}
+  .ctl label{font-family:ui-monospace,monospace;font-size:10px;letter-spacing:0.13em;text-transform:uppercase;color:var(--faint)}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--hair);border-radius:6px;padding:8px 11px;font-size:14px;min-width:200px;font-family:inherit}
+  select:focus-visible{outline:2px solid var(--accent)}
+  .iam-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;margin:10px;align-items:start}
+  @media(max-width:1000px){.iam-layout{grid-template-columns:1fr}}
+  .iam-left{position:sticky;top:12px;background:var(--panel2);border:1px solid var(--hair2);border-radius:9px;padding:14px;height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain}
+  @media(max-width:1000px){.iam-left{position:static;height:auto;max-height:none}}
+  /* themed scrollbars (Firefox + WebKit) */
+  .iam-left,.sc-left{scrollbar-width:thin;scrollbar-color:var(--hair) transparent}
+  .iam-left::-webkit-scrollbar,.sc-left::-webkit-scrollbar{width:7px}
+  .iam-left::-webkit-scrollbar-track,.sc-left::-webkit-scrollbar-track{background:transparent}
+  .iam-left::-webkit-scrollbar-thumb,.sc-left::-webkit-scrollbar-thumb{background:var(--hair);border-radius:6px;border:1px solid transparent;background-clip:padding-box}
+  .iam-left::-webkit-scrollbar-thumb:hover,.sc-left::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+  .iam-controls{display:flex;flex-direction:column;gap:16px}
+  .iam-slider{display:flex;flex-direction:column;gap:4px}
+  .iam-slider .sl-top{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px}
+  .iam-slider .sl-name{color:var(--ink);font-weight:600}
+  .iam-slider .sl-val{font-family:ui-monospace,monospace;color:var(--accent);font-size:12px}
+  .iam-slider input[type=range]{width:100%;accent-color:var(--accent);position:relative;z-index:1}
+  .iam-slider .sl-track{position:relative}
+  .iam-slider .sl-tick{position:absolute;top:50%;width:2px;height:14px;margin-left:-1px;
+    transform:translateY(-50%);background:var(--dim);opacity:.75;pointer-events:none;z-index:0}
+  .iam-slider .sl-range{font-size:9px;color:var(--faint);font-family:ui-monospace,monospace;display:flex;justify-content:space-between}
+  .iam-slider .sl-def{font-size:9px;color:var(--dim);font-family:ui-monospace,monospace}
+  .iam-reset{background:var(--panel);color:var(--dim);border:1px solid var(--hair);border-radius:6px;padding:7px 12px;font-size:11px;cursor:pointer;font-family:ui-monospace,monospace;margin-top:4px}
+  .iam-reset:hover{color:var(--ink);border-color:var(--accent)}
+  .iam-cite{margin-top:14px;border-top:1px solid var(--hair2);padding-top:10px;font-size:9.5px;line-height:1.6;color:var(--faint);font-family:ui-monospace,monospace}
+  .iam-cite b{color:var(--dim)}
+  .iam-cite .warn{color:var(--accent2)}
+  .sc-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;margin:10px;align-items:start}
+  @media(max-width:1000px){.sc-layout{grid-template-columns:1fr}}
+  .sc-left{max-height:78vh;overflow-y:auto;padding-right:6px;overscroll-behavior:contain}
+  .sc-right{position:sticky;top:12px}
+  .sc-module{margin:0 0 16px}
+  .sc-module h4{font-size:12px;font-family:ui-monospace,monospace;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;border-bottom:1px solid var(--hair2);padding-bottom:6px}
+  .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px}
+  .sc-tile{background:var(--panel2);border:1px solid var(--hair2);border-radius:8px;padding:10px 11px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .sc-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .sc-tile.sel{border-color:var(--accent);background:#13202a}
+  .sc-tile .tname{font-size:11.5px;color:var(--ink);font-weight:600;line-height:1.25;margin-bottom:3px;min-height:28px}
+  .sc-tile .tval{font-family:ui-monospace,monospace;font-size:16px;font-weight:700;color:var(--accent)}
+  .sc-tile .tyr{font-size:9.5px;color:var(--faint);font-family:ui-monospace,monospace}
+  .sc-tile .ttrend{font-size:10px;font-family:ui-monospace,monospace;margin-top:2px}
+  .sc-tile .up{color:var(--good)}.sc-tile .down{color:var(--bad)}.sc-tile .flat{color:var(--faint)}
+  .sc-expand{background:var(--panel2);border:1px solid var(--hair);border-radius:9px;padding:16px}
+  .sc-expand .xh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .sc-empty{color:var(--faint);font-size:13px;text-align:center;padding:60px 20px}
+  footer{margin-top:24px;color:var(--faint);font-size:11.5px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><span style="font-weight:800;font-size:23px">Horizons</span><span class="tag">a life in global trends</span></div>
+    <span class="gen" id="gen"></span>
+  </header>
+
+  <div class="filter">
+    <div class="lab">Countries — click to toggle</div>
+    <div class="chips" id="chips"></div>
+    <div class="row2">
+      <div>
+        <div class="lab">Climate scenario</div>
+        <div class="seg" id="scenSeg">
+          <button data-s="ssp126">SSP1-2.6 low</button>
+          <button data-s="ssp245" class="on">SSP2-4.5 mid</button>
+          <button data-s="ssp585">SSP5-8.5 high</button>
+        </div>
+      </div>
+      <div>
+        <div class="lab">World View mode</div>
+        <div class="seg" id="modeSeg">
+          <button data-m="actual" class="on">Actual values</button>
+          <button data-m="diff">Difference vs ref.</button>
+        </div>
+      </div>
+      <div id="refWrap" style="display:none">
+        <div class="lab">Reference country</div>
+        <select id="refSel"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-v="world">World view</div>
+    <div class="tab" data-v="iam">Coupled model</div>
+    <div class="tab" data-v="plot">Plot</div>
+    <div class="tab" data-v="scorecard">Scorecard</div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div id="view-world">
+      <div class="panel">
+        <h3>Population &amp; aging</h3>
+        <div class="sub">Total population, 1990–2100 (projected portion banded). Numbers on each line are <b>median age</b> at that decade; the line gets <b>heavier where the dependency ratio is higher</b> (more children + elderly per working-age adult).</div>
+        <svg id="p_pop"></svg>
+        <div class="legend" id="lg_pop"></div>
+      </div>
+
+      <div class="panel">
+        <h3>The thermal future</h3>
+        <div class="sub">Under the selected scenario. The <b>line is mean temperature</b>; the shaded envelope reaches up to the <b>annual maximum</b>. The stripe along the bottom encodes <b>days per year above the 35°C heat-index "livability" threshold</b> — brighter = more dangerous-heat days.</div>
+        <svg id="p_clim"></svg>
+        <div class="legend" id="lg_clim"></div>
+      </div>
+
+      <div class="two">
+        <div class="panel">
+          <h3>Inequality, standardized</h3>
+          <div class="sub">Gini index (0–100). Higher = more unequal. Dashed = projected.</div>
+          <svg id="p_gini"></svg>
+        </div>
+        <div class="panel">
+          <h3>Unemployment</h3>
+          <div class="sub">% of labour force. Lower is better. Dashed = projected.</div>
+          <svg id="p_unemp"></svg>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Health: longevity &amp; medical capacity</h3>
+        <div class="sub">Life expectancy as the line; each decade node is a <b>bubble sized by physicians per 1,000 people</b> — so you see longevity rising and whether medical capacity keeps pace.</div>
+        <svg id="p_health"></svg>
+        <div class="legend" id="lg_health"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Democracy: thick vs thin</h3>
+        <div class="sub">Solid = <b>liberal</b> democracy (elections + rights + checks); dotted = <b>electoral</b> democracy (clean elections alone). Liberal is the stricter measure, so it normally sits at or just below electoral. A <b style="color:var(--bad)">red-shaded gap</b> appears only where electoral runs well above liberal — elections without the rule-of-law and rights that make them meaningful. Thresholds: 0.7 strongly democratic, 0.2 authoritarian.</div>
+        <svg id="p_dem"></svg>
+        <div class="legend" id="lg_dem"></div>
+      </div>
+
+      <div class="panel">
+        <h3>The civic fabric</h3>
+        <div class="sub">All 0–1, V-Dem expert-coded. <b>Direction differs by indicator</b> — shown above each chart. Rule of law and free expression: higher is better. Corruption, polarization, and government disinformation: higher is worse. This is the "discourse health" layer — measured by country experts, not scraped from headlines.</div>
+        <div class="seg" id="civicSeg" style="margin-bottom:10px">
+          <button data-i="rule_of_law_index" class="on">Rule of law</button>
+          <button data-i="freedom_of_expression_index">Free expression</button>
+          <button data-i="political_corruption_index">Corruption</button>
+          <button data-i="political_polarization">Polarization</button>
+          <button data-i="academic_freedom">Academic freedom</button>
+        </div>
+        <svg id="p_civic"></svg>
+        <div class="legend" id="lg_civic"></div>
+      </div>
+    </div>
+
+    <div id="view-iam" style="display:none">
+      <div class="panel">
+        <h3>Coupled model — how the dimensions bend each other</h3>
+        <div class="sub">A small <b>integrated assessment model</b>. Most projections treat each indicator independently; this one couples them — temperature drives GDP growth, GDP drives life expectancy — and integrates the chain forward so a climate shock propagates into income and longevity. <b>Every coupling uses a published, empirically-estimated relationship, cited below.</b> Each plot shows <b>solid observed history</b> flowing into projections: <span style="color:var(--faint)">faint dotted</span> = naive independent projection, <b>solid</b> = coupled, <b>shaded fan</b> = uncertainty (climate-model spread propagated through the chain). Adjust a coupling on the left and watch every parameter respond.</div>
+      </div>
+      <div class="iam-layout">
+        <div class="iam-left">
+          <div class="iam-controls" id="iamControls"></div>
+          <div class="iam-cite" id="iamCite"></div>
+        </div>
+        <div class="iam-right" id="iamStack"></div>
+      </div>
+    </div>
+
+    <div id="view-plot" style="display:none">
+      <div class="panel">
+        <h3>Indicator families — the full picture</h3>
+        <div class="sub">Pick a family below. Every indicator in it is plotted in full for your selected countries, <b>including the 95% prediction interval / model-spread bands</b> that World View leaves out for legibility. This is the unembellished view — nothing smoothed, all uncertainty shown.</div>
+        <div class="seg" id="familySeg" style="flex-wrap:wrap"></div>
+      </div>
+      <div id="plotStack"></div>
+    </div>
+
+    <div id="view-scorecard" style="display:none">
+      <div class="panel">
+        <h3>Country scorecard</h3>
+        <div class="sub">One country, every indicator we hold. Click any tile on the left to plot it in the panel on the right. Tiles are grouped by domain; the trend reads against what's good for each indicator.</div>
+        <div class="rep-controls"><div class="ctl"><label for="scSel">Country</label><select id="scSel"></select></div></div>
+      </div>
+      <div class="sc-layout">
+        <div class="sc-left" id="scGrid"></div>
+        <div class="sc-right" id="scExpand"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+__DATA__
+</script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const NS="http://www.w3.org/2000/svg";
+const CCOL=["--c0","--c1","--c2","--c3","--c4","--c5","--c6","--c7","--c8","--c9","--c10","--c11"]
+  .map(v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const nameByIso=Object.fromEntries(META.countries.map(c=>[c.iso,c.name]));
+
+// ---- shared state ----
+const state={
+  selected:new Set((META.default_selection||META.countries.slice(0,6).map(c=>c.iso))),
+  scenario:"ssp245",
+  civic:"rule_of_law_index",
+  mode:"actual",              // World View: "actual" | "diff"
+  refCountry:null,            // reference for diff mode
+  family:null,                // Plot tab: current indicator family
+  scCountry:null,             // Scorecard: current country
+  scExpanded:null,            // Scorecard: expanded indicator id
+  iamCoef:null                // Coupled model: live coupling coefficients (set from IAM_PARAMS defaults)
+};
+// Colors are assigned to the CURRENTLY SELECTED countries in order, so no two
+// visible lines ever share a color (index-in-full-list collided once >12
+// countries existed — e.g. USA and Canada). Recomputed whenever selection
+// changes, in a stable order (the country list order) so it doesn't reshuffle
+// arbitrarily as you toggle.
+let colorOf={};
+function assignColors(){
+  colorOf={};
+  let i=0;
+  META.countries.forEach(c=>{ if(state.selected.has(c.iso)) colorOf[c.iso]=CCOL[i++%CCOL.length]; });
+}
+
+const Y0=1990, Y1=2100, BIRTH=META.birth_year;
+const NOW=new Date().getFullYear();   // dynamic system year — the true "now"
+// life milestones: decade ages
+const MILESTONES=[];
+for(let age=30;age<=100;age+=10){const yr=BIRTH+age; if(yr>=Y0&&yr<=Y1) MILESTONES.push({age,yr});}
+
+// ---- tiny SVG helpers (no deps) ----
+function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function clear(svg){while(svg.firstChild)svg.removeChild(svg.firstChild); HOVER.delete(svg);}
+function tipShow(e,html){const t=$("#tip");t.innerHTML=html;t.style.opacity=1;
+  t.style.left=Math.min(e.clientX+14,innerWidth-275)+"px";t.style.top=Math.max(8,e.clientY-10)+"px";}
+function tipHide(){$("#tip").style.opacity=0;}
+
+// scales
+function linScale(d0,d1,r0,r1){const m=(r1-r0)/((d1-d0)||1);return v=>r0+(v-d0)*m;}
+
+// get a country's series for an indicator, sorted, optionally scenario-filtered.
+// When World View is in "difference vs reference" mode (DIFF_ON true), every
+// value is shown as the GAP from the reference country at that year, so the
+// reference becomes a flat zero line and convergence/divergence is explicit.
+let DIFF_ON=false;  // set true only while rendering World View in diff mode
+function series(ind,iso){
+  const a=(DATA[ind]&&DATA[ind][iso])||[];
+  let pts=a;
+  if(a.some(p=>p.s)) pts=a.filter(p=>!p.s||p.s===state.scenario);
+  pts=pts.slice().sort((x,y)=>x.y-y.y);
+  if(DIFF_ON && state.refCountry){
+    if(iso===state.refCountry){
+      pts=pts.map(p=>({...p,v:0,lo:undefined,hi:undefined}));
+    } else {
+      const ref=rawSeries(ind,state.refCountry);
+      const refBy=Object.fromEntries(ref.map(p=>[p.y,p.v]));
+      pts=pts.filter(p=>refBy[p.y]!=null).map(p=>({...p,v:p.v-refBy[p.y],
+        lo:p.lo!=null?p.lo-refBy[p.y]:undefined, hi:p.hi!=null?p.hi-refBy[p.y]:undefined}));
+    }
+  }
+  return pts;
+}
+// raw series without the diff transform (used to compute the reference baseline)
+function rawSeries(ind,iso){
+  const a=(DATA[ind]&&DATA[ind][iso])||[];
+  let pts=a;
+  if(a.some(p=>p.s)) pts=a.filter(p=>!p.s||p.s===state.scenario);
+  return pts.slice().sort((x,y)=>x.y-y.y);
+}
+// Extent unioned across EVERY climate scenario. Without this the y-axis re-fits
+// to whichever SSP is selected, so the lines land in near-identical pixels and
+// the scenario toggle looks like it does nothing (it was changing the numbers,
+// not the picture). Used by the climate panel and the heat stripe.
+const ALL_SCENARIOS=["ssp126","ssp245","ssp585"];
+function valExtentAllScenarios(inds,isos,opts={}){
+  const keep=state.scenario; let lo=Infinity,hi=-Infinity;
+  ALL_SCENARIOS.forEach(s=>{
+    state.scenario=s;
+    const [a,b]=valExtent(inds,isos,opts);
+    if(a<lo)lo=a; if(b>hi)hi=b;
+  });
+  state.scenario=keep;
+  if(!isFinite(lo)){lo=0;hi=1;}
+  return [lo,hi];
+}
+// Max value of an indicator across all scenarios (for stable colour ramps).
+function maxAllScenarios(ind,iso){
+  const keep=state.scenario; let m=0;
+  ALL_SCENARIOS.forEach(s=>{state.scenario=s;
+    rawSeries(ind,iso).forEach(p=>{if(p.v>m)m=p.v;});});
+  state.scenario=keep; return m;
+}
+function valExtent(inds,isos,opts={}){
+  let lo=Infinity,hi=-Infinity;
+  inds.forEach(ind=>isos.forEach(iso=>series(ind,iso).forEach(p=>{
+    const vs=[p.v]; if(opts.band&&p.lo!=null){vs.push(p.lo,p.hi);}
+    vs.forEach(v=>{if(v<lo)lo=v;if(v>hi)hi=v;});
+  })));
+  if(lo===Infinity){lo=0;hi=1;}
+  return [lo,hi];
+}
+
+// draw the shared time framework (grid, now line, life milestones) into a plot area
+function timeFrame(svg,W,H,M,yLabel,fmtY,yDomain,dataEdge){
+  const iw=W-M.l-M.r, ih=H-M.t-M.b;
+  const x=linScale(Y0,Y1,M.l,M.l+iw);
+  const y=linScale(yDomain[0],yDomain[1],M.t+ih,M.t);
+  // horizontal gridlines + y labels
+  const yticks=niceTicks(yDomain[0],yDomain[1],6);
+  yticks.forEach(t=>{
+    svg.appendChild(el("line",{class:"gridline",x1:M.l,x2:M.l+iw,y1:y(t),y2:y(t)}));
+    const lb=el("text",{class:"axislab",x:M.l-8,y:y(t)+3,"text-anchor":"end"});lb.textContent=fmtY(t);svg.appendChild(lb);
+  });
+  // vertical decade gridlines + year labels every decade
+  for(let yr=Y0;yr<=Y1;yr+=1){
+    const decade=yr%10===0;
+    if(decade){
+      svg.appendChild(el("line",{class:"gridline decade",x1:x(yr),x2:x(yr),y1:M.t,y2:M.t+ih}));
+      const lb=el("text",{class:"axislab",x:x(yr),y:M.t+ih+14,"text-anchor":"middle"});lb.textContent=yr;svg.appendChild(lb);
+    }
+  }
+  // life milestones
+  MILESTONES.forEach(m=>{
+    svg.appendChild(el("line",{class:"ageline",x1:x(m.yr),x2:x(m.yr),y1:M.t,y2:M.t+ih}));
+    const lb=el("text",{class:"agetag",x:x(m.yr),y:M.t-4,"text-anchor":"middle"});lb.textContent="age "+m.age;svg.appendChild(lb);
+  });
+  // NOW line = true current system year
+  if(NOW>=Y0&&NOW<=Y1){
+    svg.appendChild(el("line",{class:"nowline",x1:x(NOW),x2:x(NOW),y1:M.t,y2:M.t+ih}));
+    const nl=el("text",{class:"nowtag",x:x(NOW),y:M.t+ih+26,"text-anchor":"middle"});nl.textContent="NOW "+NOW;svg.appendChild(nl);
+  }
+  // data-edge line = where observed data ends / projection begins (per panel).
+  // No label (it crowded the NOW/age markers); explained in the footer legend.
+  if(dataEdge && dataEdge>=Y0 && dataEdge<=Y1){
+    svg.appendChild(el("line",{class:"edgeline",x1:x(dataEdge),x2:x(dataEdge),y1:M.t,y2:M.t+ih}));
+  }
+  // y axis title
+  if(yLabel){const yt=el("text",{class:"axistitle",transform:`rotate(-90)`,x:-(M.t+ih/2),y:14,"text-anchor":"middle"});yt.textContent=yLabel;svg.appendChild(yt);}
+  return {x,y,iw,ih};
+}
+function niceTicks(lo,hi,n){
+  if(lo===hi){return [lo];}
+  const span=hi-lo, step0=span/n, mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  const norm=step0/mag, step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  const start=Math.ceil(lo/step)*step, out=[];
+  for(let v=start;v<=hi+1e-9;v+=step)out.push(Math.round(v/step)*step);
+  return out;
+}
+function fmtNum(v){
+  if(Math.abs(v)>=1e9)return (v/1e9).toFixed(2).replace(/\.?0+$/,"")+"B";
+  if(Math.abs(v)>=1e6)return (v/1e6).toFixed(1).replace(/\.?0+$/,"")+"M";
+  if(Math.abs(v)>=1e3)return (v/1e3).toFixed(1).replace(/\.?0+$/,"")+"k";
+  if(Math.abs(v)>=10)return v.toFixed(0);
+  return v.toFixed(2);
+}
+// Human-readable unit labels (registry stores machine identifiers).
+const UNIT_PRETTY={
+  constant_2021_intl_dollars:"intl $ (PPP)", people:"people", years:"years",
+  percent:"%", percent_gdp:"% of GDP", percent_land:"% of land",
+  percent_manufactured_exports:"% of mfg. exports", index_0_100:"index (0–100)",
+  index_0_1:"index (0–1)", score_0_4:"score (0–4)", births_per_woman:"births/woman",
+  per_1000_live_births:"per 1,000 births", per_100k_live_births:"per 100k births",
+  per_1000_people:"per 1,000 people", per_100k:"per 100k", per_100_people:"per 100",
+  tonnes_per_capita:"tonnes/person", ug_per_m3:"µg/m³", celsius:"°C", days:"days/yr"
+};
+const uLabel=u=>UNIT_PRETTY[u]||u||"";
+// value + unit for tooltips/tiles, avoiding redundancy for big counts
+function valUnit(v,u){
+  const n=fmtNum(v);
+  if(u==="people"||u==="constant_2021_intl_dollars") return n; // "1.44B" reads fine alone
+  const pu=uLabel(u);
+  return pu?`${n} ${pu}`:n;
+}
+
+// generic multi-country line plot with observed solid / projected dashed + optional band
+function linePlot(svgId,inds,opts={}){
+  const svg=$("#"+svgId); clear(svg);
+  const W=opts.W||1440, H=opts.H||opts.tall?420:300, M=opts.M||{t:26,r:20,b:34,l:58};
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const isos=[...state.selected];
+  if(!isos.length){const t=el("text",{x:W/2,y:H/2,"text-anchor":"middle",fill:"#5a6e80"});t.textContent="Select at least one country.";svg.appendChild(t);return null;}
+  const dom=opts.yDomain||padDom(valExtent(inds,isos,{band:opts.band}));
+  // data edge = latest observed year across the shown series (per panel)
+  let edge=-Infinity;
+  inds.forEach(ind=>isos.forEach(iso=>series(ind,iso).forEach(p=>{if(p.t==="o"&&p.y>edge)edge=p.y;})));
+  if(edge===-Infinity)edge=null;
+  const fr=timeFrame(svg,W,H,M,opts.yLabel,opts.fmtY||fmtNum,dom,edge);
+  return {svg,fr,isos,W,H,M};
+}
+function padDom([lo,hi]){const p=(hi-lo)*0.08||1;return [lo-p,hi+p];}
+
+// Longest year-jump still drawn as a continuous line. Beyond this the line is
+// broken, because a straight segment across a 40-year hole in the physician or
+// Gini series reads as data when it is interpolation. The diagnostic showed a
+// MEDIAN of 14-18 missing years inside span for four indicators.
+const MAX_GAP_YEARS=5;
+function segmentGaps(pts,maxGap=MAX_GAP_YEARS){
+  const runs=[]; let cur=[];
+  pts.forEach(p=>{
+    if(cur.length && p.y-cur[cur.length-1].y>maxGap){runs.push(cur);cur=[];}
+    cur.push(p);
+  });
+  if(cur.length)runs.push(cur);
+  return runs;
+}
+function pathFor(pts,fr,key){
+  return pts.map((p,i)=>(i?"L":"M")+fr.x(p.y).toFixed(1)+" "+fr.y(p[key]).toFixed(1)).join(" ");
+}
+// split a sorted series into observed segment and projected segment (with join)
+function splitOP(pts){
+  const obs=pts.filter(p=>p.t==="o");
+  const proj=pts.filter(p=>p.t!=="o");
+  const joined=obs.length&&proj.length?[obs[obs.length-1],...proj]:proj;
+  return {obs,proj:joined};
+}
+function drawCountryLine(g,pts,col,fr,opts={}){
+  const {obs,proj}=splitOP(pts);
+  // band on projected
+  if(opts.band){
+    const band=proj.filter(p=>p.lo!=null);
+    if(band.length>1){
+      const up=band.map((p,i)=>(i?"L":"M")+fr.x(p.y).toFixed(1)+" "+fr.y(p.hi).toFixed(1)).join(" ");
+      const dn=band.slice().reverse().map(p=>"L"+fr.x(p.y).toFixed(1)+" "+fr.y(p.lo).toFixed(1)).join(" ");
+      g.appendChild(el("path",{d:up+" "+dn+" Z",fill:col,"fill-opacity":0.12,stroke:"none"}));
+    }
+  }
+  // observed drawn as gap-aware runs; a lone isolated observation becomes a dot
+  // so it is visible rather than silently dropped
+  segmentGaps(obs).forEach(run=>{
+    if(run.length>1) g.appendChild(el("path",{d:pathFor(run,fr,"v"),fill:"none",stroke:col,"stroke-width":opts.w||2}));
+    else if(run.length===1) g.appendChild(el("circle",{cx:fr.x(run[0].y),cy:fr.y(run[0].v),r:1.8,fill:col}));
+  });
+  if(proj.length>1)g.appendChild(el("path",{d:pathFor(proj,fr,"v"),fill:"none",stroke:col,"stroke-width":opts.w||2,"stroke-dasharray":"5 4"}));
+  // register for the panel's SHARED hover layer (one listener per panel, not per point)
+  if(opts.svg&&opts.fr) registerHover(opts.svg,opts.fr,pts,col,opts.name,opts.tip);
+}
+
+// ---- shared hover: one listener per SVG, nearest-point lookup ----
+const HOVER=new WeakMap(); // svg -> {fr, series:[{pts,col,name,tip}], dot}
+function registerHover(svg,fr,pts,col,name,tipFn){
+  let h=HOVER.get(svg);
+  if(!h){
+    h={fr,series:[],dot:null};
+    HOVER.set(svg,h);
+    const dot=el("circle",{r:4.5,fill:"#fff",stroke:"#05090d","stroke-width":1.5,style:"opacity:0;pointer-events:none"});
+    svg.appendChild(dot); h.dot=dot;
+    svg.addEventListener("mousemove",ev=>onHover(ev,svg));
+    svg.addEventListener("mouseleave",()=>{tipHide();h.dot.style.opacity=0;});
+  }
+  h.series.push({pts,col,name,tip:tipFn});
+}
+function onHover(ev,svg){
+  const h=HOVER.get(svg); if(!h)return;
+  const rect=svg.getBoundingClientRect();
+  const vb=svg.viewBox.baseVal;
+  // map client coords to SVG viewBox coords (both axes)
+  const sx=vb.x+(ev.clientX-rect.left)/rect.width*vb.width;
+  const sy=vb.y+(ev.clientY-rect.top)/rect.height*vb.height;
+  const yr=Math.round(xInvert(h.fr,sx));
+  // pick the nearest point by TRUE 2D pixel distance, so the line the cursor is
+  // closest to vertically wins — not just whichever series is first at this year.
+  let best=null,bestd=Infinity;
+  h.series.forEach(s=>{
+    // candidate point in this series nearest the hovered year
+    let p=s.pts.find(q=>q.y===yr);
+    if(!p) p=s.pts.reduce((m,q)=>Math.abs(q.y-yr)<Math.abs((m?m.y:1e9)-yr)?q:m,null);
+    if(!p)return;
+    const dx=h.fr.x(p.y)-sx, dy=h.fr.y(p.v)-sy;
+    const d=dx*dx+dy*dy;            // squared pixel distance (x AND y)
+    if(d<bestd){bestd=d;best={p,s};}
+  });
+  if(!best){tipHide();h.dot.style.opacity=0;return;}
+  const {p,s}=best;
+  h.dot.setAttribute("cx",h.fr.x(p.y));h.dot.setAttribute("cy",h.fr.y(p.v));
+  h.dot.setAttribute("fill",s.col);h.dot.style.opacity=1;
+  tipShow(ev,s.tip?s.tip(p):`<div class="ty">${s.name} · ${p.y}</div><div class="tv">${fmtNum(p.v)}</div>`);
+}
+function xInvert(fr,px){ // invert the linear x scale (year from pixel)
+  return Y0+(px-fr.x(Y0))/((fr.x(Y1)-fr.x(Y0))/(Y1-Y0));
+}
+function legend(id){
+  const host=$("#"+id); if(!host)return; host.innerHTML="";
+  [...state.selected].forEach(iso=>{
+    const d=document.createElement("div");d.className="lg";
+    d.innerHTML=`<span class="sw" style="background:${colorOf[iso]}"></span>${nameByIso[iso]}`;
+    host.appendChild(d);
+  });
+}
+
+// ============ PANEL 1: population + median age labels + dependency thickness ============
+function drawPop(){
+  const ctx=linePlot("p_pop",["population_total"],{band:true,tall:true,yLabel:"population",fmtY:fmtNum});
+  if(!ctx)return; const {svg,fr,isos}=ctx;
+  const g=el("g",{}); svg.appendChild(g);
+  isos.forEach(iso=>{
+    const pop=series("population_total",iso), col=colorOf[iso];
+    const dep=Object.fromEntries(rawSeries("dependency_ratio",iso).map(p=>[p.y,p.v]));
+    const mage=Object.fromEntries(rawSeries("median_age",iso).map(p=>[p.y,p.v]));
+    // dependency-weighted thickness: draw as segments
+    const {obs,proj}=splitOP(pop);
+    function segs(arr,dash){
+      for(let i=1;i<arr.length;i++){
+        const a=arr[i-1],b=arr[i];
+        if(b.y-a.y>MAX_GAP_YEARS) continue;   // don't bridge a long data hole
+        const d=dep[b.y]??55; const w=Math.min(6,1.2+Math.max(0,(d-40))/18); // heavier where dependency high; hard-capped at 6px
+        const ln=el("line",{x1:fr.x(a.y),y1:fr.y(a.v),x2:fr.x(b.y),y2:fr.y(b.v),
+          stroke:col,"stroke-width":w.toFixed(2),"stroke-linecap":"round"});
+        if(dash)ln.setAttribute("stroke-dasharray","5 4");
+        g.appendChild(ln);
+      }
+    }
+    // band on projected
+    const band=proj.filter(p=>p.lo!=null);
+    if(band.length>1){
+      const up=band.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.hi)).join(" ");
+      const dn=band.slice().reverse().map(p=>"L"+fr.x(p.y)+" "+fr.y(p.lo)).join(" ");
+      g.appendChild(el("path",{d:up+" "+dn+" Z",fill:col,"fill-opacity":0.10,stroke:"none"}));
+    }
+    segs(obs,false); segs(proj,true);
+    // median age labels at decades
+    pop.forEach(p=>{
+      if(p.y%20===0 && mage[p.y]!=null){
+        const t=el("text",{class:"nodelab",x:fr.x(p.y),y:fr.y(p.v)-7,"text-anchor":"middle",fill:col});
+        t.textContent=Math.round(mage[p.y]); g.appendChild(t);
+      }
+    });
+    // shared hover (one listener for the whole panel)
+    registerHover(svg,fr,pop,col,nameByIso[iso],p=>`<div class="ty">${nameByIso[iso]} · ${p.y}</div>
+      <div class="tv">${fmtNum(p.v)} people</div>
+      <div class="tr">median age ${mage[p.y]!=null?Math.round(mage[p.y]):"\u2014"} · dependency ${dep[p.y]!=null?Math.round(dep[p.y]):"\u2014"}/100</div>`);
+  });
+  // note about thickness
+  const note=el("text",{class:"agetag",x:ctx.M.l,y:14}); note.textContent="line thickens where dependency ratio is higher · numbers = median age";
+  svg.appendChild(note);
+  legend("lg_pop");
+}
+
+// ============ PANEL 2: climate combined ============
+function drawClim(){
+  const svg=$("#p_clim"); clear(svg);
+  const W=1440,H=380,M={t:26,r:20,b:54,l:58};
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const isos=[...state.selected];
+  if(!isos.length)return;
+  // domain over mean & max temp
+  const dom=padDom(valExtentAllScenarios(["mean_temperature","max_temperature"],isos,{}));
+  const fr=timeFrame(svg,W,H,M,"°C",v=>v.toFixed(0)+"°",dom,null);
+  const g=el("g",{}); svg.appendChild(g);
+  isos.forEach(iso=>{
+    const col=colorOf[iso];
+    const mean=series("mean_temperature",iso), max=series("max_temperature",iso);
+    // envelope mean->max
+    if(mean.length&&max.length){
+      const up=max.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.v)).join(" ");
+      const dn=mean.slice().reverse().map(p=>"L"+fr.x(p.y)+" "+fr.y(p.v)).join(" ");
+      g.appendChild(el("path",{d:up+" "+dn+" Z",fill:col,"fill-opacity":0.10,stroke:"none"}));
+    }
+    if(mean.length>1)g.appendChild(el("path",{d:pathFor(mean,fr,"v"),fill:"none",stroke:col,"stroke-width":2,"stroke-dasharray":"5 4"}));
+    const maxBy=Object.fromEntries(max.map(m=>[m.y,m.v]));
+    registerHover(svg,fr,mean,col,nameByIso[iso],p=>`<div class="ty">${nameByIso[iso]} · ${p.y}</div>
+      <div class="tv">mean ${p.v.toFixed(1)}°C</div><div class="tr">max ${maxBy[p.y]!=null?maxBy[p.y].toFixed(1):"\u2014"}°C</div>`);
+  });
+  // heat-index-days stripe along the bottom for the FIRST selected country (or composite)
+  drawHeatStripe(svg,fr,W,M,isos[0]);
+  legend("lg_clim");
+}
+function drawHeatStripe(svg,fr,W,M,iso){
+  if(!iso)return;
+  const hi=series("heat_index_days_over_35c",iso);
+  if(!hi.length)return;
+  // Ramp normalised across ALL scenarios: previously each scenario re-normalised
+  // to its own worst year, so SSP1-2.6 looked exactly as dangerous as SSP5-8.5.
+  const maxv=Math.max(maxAllScenarios("heat_index_days_over_35c",iso),1);
+  const yTop=M.t+ (fr.ih)+34, h=10;
+  const lbl=el("text",{class:"agetag",x:M.l,y:yTop-3}); lbl.textContent=`heat-index danger days · ${nameByIso[iso]}`; svg.appendChild(lbl);
+  for(let i=1;i<hi.length;i++){
+    const a=hi[i-1],b=hi[i];
+    const inten=Math.min(1,b.v/maxv);
+    // warm color ramp: dim -> bright orange/red
+    const r=Math.round(60+inten*195), gg=Math.round(40+inten*60), bb=Math.round(40+(1-inten)*20);
+    const rect=el("rect",{x:fr.x(a.y),y:yTop,width:Math.max(1,fr.x(b.y)-fr.x(a.y)+0.5),height:h,
+      fill:`rgb(${r},${gg},${bb})`,style:"cursor:pointer"});
+    rect.addEventListener("mousemove",e=>tipShow(e,`<div class="ty">${nameByIso[iso]} · ${b.y}</div><div class="tv">${Math.round(b.v)} danger days/yr</div>`));
+    rect.addEventListener("mouseleave",tipHide);
+    svg.appendChild(rect);
+  }
+}
+
+// ============ PANEL 3: gini + unemployment (simple multi-line) ============
+function simpleLines(svgId,ind,opts={}){
+  const ctx=linePlot(svgId,[ind],{band:false,yLabel:opts.yLabel,fmtY:opts.fmtY||fmtNum,H:280,M:{t:22,r:16,b:34,l:48},W:700});
+  if(!ctx)return; const {svg,fr,isos}=ctx; const g=el("g",{});svg.appendChild(g);
+  isos.forEach(iso=>drawCountryLine(g,series(ind,iso),colorOf[iso],fr,{name:nameByIso[iso],band:false,svg,fr}));
+}
+
+// ============ PANEL 4: life expectancy line + physicians bubbles ============
+function drawHealth(){
+  const ctx=linePlot("p_health",["life_expectancy"],{band:false,tall:true,yLabel:"life expectancy (yrs)",fmtY:v=>v.toFixed(0)});
+  if(!ctx)return; const {svg,fr,isos}=ctx; const g=el("g",{});svg.appendChild(g);
+  // physician size scale
+  const allPhys=[]; isos.forEach(iso=>rawSeries("physicians_per_1000",iso).forEach(p=>allPhys.push(p.v)));
+  const pmax=Math.max(...allPhys,1);
+  const rOf=v=>3+Math.sqrt(Math.max(0,v)/pmax)*11;
+  isos.forEach(iso=>{
+    const col=colorOf[iso];
+    const phys=Object.fromEntries(rawSeries("physicians_per_1000",iso).map(p=>[p.y,p.v]));
+    drawCountryLine(g,series("life_expectancy",iso),col,fr,{name:nameByIso[iso],band:false,svg,fr,
+      tip:p=>`<div class="ty">${nameByIso[iso]} · ${p.y}</div>
+        <div class="tv">${p.v.toFixed(1)} yrs</div>
+        <div class="tr">${phys[p.y]!=null?phys[p.y].toFixed(2)+" physicians/1,000":"physicians: n/a"}</div>`});
+    series("life_expectancy",iso).forEach(p=>{
+      if(p.y%10===0 && phys[p.y]!=null){
+        const c=el("circle",{cx:fr.x(p.y),cy:fr.y(p.v),r:rOf(phys[p.y]),fill:col,"fill-opacity":0.32,stroke:col,"stroke-width":1.2,style:"pointer-events:none"});
+        g.appendChild(c);
+      }
+    });
+  });
+  legend("lg_health");
+}
+
+// ============ PANEL 5: democracy thick vs thin with gap shading ============
+function drawDem(){
+  const ctx=linePlot("p_dem",["liberal_democracy_index","electoral_democracy_index"],{band:false,tall:true,yLabel:"index 0\u20131",fmtY:v=>v.toFixed(1),yDomain:[0,1]});
+  if(!ctx)return; const {svg,fr,isos}=ctx; const g=el("g",{});svg.appendChild(g);
+  // threshold lines
+  [[0.7,"--good","strongly democratic"],[0.2,"--bad","authoritarian"]].forEach(([t,c,lab])=>{
+    const col=getComputedStyle(document.documentElement).getPropertyValue(c).trim();
+    g.appendChild(el("line",{class:"thresh",x1:fr.x(Y0),x2:fr.x(Y1),y1:fr.y(t),y2:fr.y(t),stroke:col}));
+    const tx=el("text",{class:"threshlab",x:fr.x(Y1)-2,y:fr.y(t)-4,"text-anchor":"end",fill:col});tx.textContent=lab+" ("+t+")";g.appendChild(tx);
+  });
+  const FLAG=0.10; // electoral exceeding liberal by >0.10 = meaningful illiberal gap
+  isos.forEach(iso=>{
+    const col=colorOf[iso];
+    const lib=series("liberal_democracy_index",iso), ele=series("electoral_democracy_index",iso);
+    const eleBy=Object.fromEntries(ele.map(p=>[p.y,p.v]));
+    // shade ONLY the segments where electoral exceeds liberal by the flag margin
+    // (elections without the liberal freedoms to back them) — not the normal small gap.
+    const common=lib.filter(p=>eleBy[p.y]!=null);
+    let run=[];
+    const flushRun=()=>{
+      if(run.length>1){
+        const up=run.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(eleBy[p.y])).join(" ");
+        const dn=run.slice().reverse().map(p=>"L"+fr.x(p.y)+" "+fr.y(p.v)).join(" ");
+        g.appendChild(el("path",{d:up+" "+dn+" Z",fill:getComputedStyle(document.documentElement).getPropertyValue("--bad").trim(),"fill-opacity":0.16,stroke:"none"}));
+      }
+      run=[];
+    };
+    common.forEach(p=>{ if(eleBy[p.y]-p.v>FLAG){run.push(p);} else {flushRun();} });
+    flushRun();
+    // liberal line (solid, primary) — hover shows both indices and the gap
+    drawCountryLine(g,lib,col,fr,{name:nameByIso[iso]+" liberal dem.",band:false,w:2.4,svg,fr,
+      tip:p=>{
+        const e=eleBy[p.y];
+        const gap=e!=null?(e-p.v):null;
+        const gapTxt=gap==null?"":(gap>FLAG
+          ?`<div class="tr" style="color:var(--bad)">electoral ${e.toFixed(2)} · gap +${gap.toFixed(2)} (illiberal)</div>`
+          :`<div class="tr">electoral ${e.toFixed(2)} · gap ${gap>=0?"+":""}${gap.toFixed(2)}</div>`);
+        return `<div class="ty">${nameByIso[iso]} · ${p.y}</div>
+          <div class="tv">liberal ${p.v.toFixed(2)}</div>${gapTxt}`;
+      }});
+    // electoral line (dotted, secondary)
+    const {obs,proj}=splitOP(ele);
+    if(obs.length>1)g.appendChild(el("path",{d:pathFor(obs,fr,"v"),fill:"none",stroke:col,"stroke-width":1.3,"stroke-dasharray":"1 3","stroke-opacity":0.7}));
+    if(proj.length>1)g.appendChild(el("path",{d:pathFor(proj,fr,"v"),fill:"none",stroke:col,"stroke-width":1.3,"stroke-dasharray":"1 3","stroke-opacity":0.45}));
+  });
+  legend("lg_dem");
+}
+
+// ============ PANEL 6: civic fabric (selectable indicator) ============
+function drawCivic(){
+  const ind=state.civic;
+  const DIRS={
+    rule_of_law_index:["higher = stronger rule of law","good",[0,1]],
+    freedom_of_expression_index:["higher = freer expression","good",[0,1]],
+    political_corruption_index:["higher = MORE corrupt","bad",[0,1]],
+    political_polarization:["higher = MORE polarized (0\u20134 scale)","bad",[0,4]],
+    academic_freedom:["higher = freer academia","good",[0,1]]
+  };
+  const [dirText,dirKind,scale]=DIRS[ind]||["","",[0,1]];
+  // Show the indicator's natural scale (0-1 or 0-4) as the baseline context,
+  // but EXPAND the axis to fit any values that exceed it. Never clamp data —
+  // if a projection genuinely runs past the nominal max, the axis grows to
+  // show it rather than hiding it.
+  const isos0=[...state.selected];
+  let lo=scale[0], hi=scale[1];
+  isos0.forEach(iso=>series(ind,iso).forEach(p=>{
+    [p.v,p.lo,p.hi].forEach(v=>{if(v!=null){if(v<lo)lo=v;if(v>hi)hi=v;}});
+  }));
+  const pad=(hi-lo)*0.04||0.05;
+  const dom=[lo<scale[0]?lo-pad:scale[0], hi>scale[1]?hi+pad:scale[1]];
+  const ctx=linePlot("p_civic",[ind],{band:false,tall:false,yLabel:scale[1]>1?"score 0\u20134":"index 0\u20131",fmtY:v=>v.toFixed(1),yDomain:dom,H:320});
+  if(!ctx)return; const {svg,fr,isos}=ctx; const g=el("g",{});svg.appendChild(g);
+  // direction banner inside the plot
+  const dc=getComputedStyle(document.documentElement).getPropertyValue(dirKind==="bad"?"--bad":"--good").trim();
+  const dt=el("text",{x:ctx.M.l,y:14,class:"axistitle",fill:dc,"font-family":"ui-monospace,monospace","font-size":"11"});
+  dt.textContent="\u2191 "+dirText; svg.appendChild(dt);
+  isos.forEach(iso=>{
+    drawCountryLine(g,series(ind,iso),colorOf[iso],fr,{name:nameByIso[iso],svg,fr});
+  });
+  legend("lg_civic");
+}
+
+// ---- render all ----
+function renderWorld(){
+  DIFF_ON = (state.mode==="diff" && !!state.refCountry);
+  drawPop(); drawClim();
+  simpleLines("p_gini","gini_index",{yLabel:"Gini",fmtY:v=>v.toFixed(0)});
+  simpleLines("p_unemp","unemployment_rate",{yLabel:"%",fmtY:v=>v.toFixed(0)});
+  drawHealth(); drawDem(); drawCivic();
+  DIFF_ON=false;
+}
+
+// ---- filter UI ----
+function buildChips(){
+  const host=$("#chips"); host.innerHTML="";
+  META.countries.forEach(c=>{
+    const on=state.selected.has(c.iso);
+    const col=colorOf[c.iso]||"#5a6e80"; // selected -> its assigned color; else neutral
+    const d=document.createElement("div");d.className="chip"+(on?" on":"");
+    if(on)d.style.background=col;
+    d.innerHTML=`<span class="dot" style="background:${on?'#06121a':col}"></span>${c.name}`;
+    d.onclick=()=>{ state.selected.has(c.iso)?state.selected.delete(c.iso):state.selected.add(c.iso);
+      assignColors(); buildChips();
+      renderWorld(); if(state.family && $("#view-plot").style.display!=="none")renderPlot();
+      if(state.iamCoef && $("#view-iam").style.display!=="none")renderIAMPlots(); };
+    host.appendChild(d);
+  });
+}
+$("#scenSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  state.scenario=b.dataset.s; $$("#scenSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  renderWorld(); if(state.family)renderPlot(); if(state.scCountry)renderScorecard();
+  if(state.iamCoef && $("#view-iam").style.display!=="none")renderIAMPlots();});
+// The civic buttons used to be hardcoded HTML, and two of them named indicators
+// that are not in the registry at all (political_polarization, academic_freedom)
+// -- so those tabs rendered an empty chart with no error. Build the segment from
+// the indicators actually present in DATA: a button can no longer exist for a
+// series that does not.
+function buildCivicSeg(){
+  const host=$("#civicSeg"); if(!host)return;
+  const WANT=["rule_of_law_index","freedom_of_expression_index","political_corruption_index",
+              "political_polarization","academic_freedom","academic_freedom_index",
+              "liberal_component_index","judicial_constraints_executive",
+              "freedom_of_association_index","participatory_democracy_index",
+              "deliberative_democracy_index","egalitarian_democracy_index"];
+  const LABEL={rule_of_law_index:"Rule of law",freedom_of_expression_index:"Free expression",
+    political_corruption_index:"Corruption",political_polarization:"Polarization",
+    academic_freedom:"Academic freedom",academic_freedom_index:"Academic freedom",
+    liberal_component_index:"Liberal rights",judicial_constraints_executive:"Judicial checks",
+    freedom_of_association_index:"Association",participatory_democracy_index:"Participation",
+    deliberative_democracy_index:"Deliberation",egalitarian_democracy_index:"Egalitarian"};
+  const have=WANT.filter(k=>DATA[k]&&Object.keys(DATA[k]).length);
+  const missing=WANT.filter(k=>WANT.indexOf(k)<5&&!have.includes(k));
+  if(missing.length)console.warn("civic fabric: no data for "+missing.join(", ")+" — button omitted");
+  if(!have.length){host.innerHTML='<span class="sub">no civic indicators in this build</span>';return;}
+  if(!have.includes(state.civic))state.civic=have[0];
+  host.innerHTML=have.map(k=>`<button data-i="${k}"${k===state.civic?' class="on"':''}>${LABEL[k]||k}</button>`).join("");
+}
+$("#civicSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  state.civic=b.dataset.i; $$("#civicSeg button").forEach(x=>x.classList.toggle("on",x===b)); drawCivic();});
+
+// World View mode toggle (actual vs difference-from-reference)
+$("#modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  state.mode=b.dataset.m; $$("#modeSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  $("#refWrap").style.display = state.mode==="diff" ? "" : "none";
+  if(state.mode==="diff" && !state.refCountry){
+    state.refCountry=[...state.selected][0]||META.countries[0].iso;
+    $("#refSel").value=state.refCountry;
+  }
+  renderWorld();});
+
+function buildRefPicker(){
+  $("#refSel").innerHTML=META.countries.map(c=>`<option value="${c.iso}">${c.name}</option>`).join("");
+  if(state.refCountry)$("#refSel").value=state.refCountry;
+  $("#refSel").addEventListener("change",()=>{state.refCountry=$("#refSel").value;renderWorld();});
+}
+
+$$(".tab").forEach(t=>t.addEventListener("click",()=>{
+  $$(".tab").forEach(x=>x.classList.toggle("active",x===t));
+  ["world","iam","plot","scorecard"].forEach(v=>$("#view-"+v).style.display=v===t.dataset.v?"":"none");
+  if(t.dataset.v==="iam"){ if(!state.iamCoef) initIAM(); renderIAM(); }
+  if(t.dataset.v==="plot"){ if(!state.family){state.family=MODULES[0];} renderPlot(); }
+  if(t.dataset.v==="scorecard"){ if(!state.scCountry){state.scCountry=[...state.selected][0]||META.countries[0].iso; $("#scSel").value=state.scCountry;} renderScorecard(); }
+}));
+
+// ============ COUPLED MODEL (IAM) TAB ============
+// The model is DEFINED IN R (02_process_project.R build_coupling_spec) and
+// arrives as the COUPLING object: {params, edges, notes}. This JS does NOT
+// contain model logic — it only EVALUATES the named functional forms the spec
+// references. Adding/changing an edge is an R change; rebuild and it appears.
+// The form-library below must stay in sync with the form names R emits.
+const IAM_PARAMS = (COUPLING && COUPLING.params) ? COUPLING.params : {};
+const IAM_EDGES  = (COUPLING && COUPLING.edges)  ? COUPLING.edges  : [];
+const IAM_NOTES  = (COUPLING && COUPLING.notes)  ? COUPLING.notes  : {};
+// R uses `default`; expose as `.def` for the existing slider code.
+for(const k in IAM_PARAMS){ if(IAM_PARAMS[k].def==null) IAM_PARAMS[k].def=IAM_PARAMS[k].default; }
+
+// ---- named functional forms (the evaluator library) ----------------------
+// Each form is pure: given the live coefficient(s) C, a context ctx (baseline
+// temp, income scaler) and an input value, it returns its effect. The R spec
+// picks WHICH form and WHICH coefficients; these just compute it.
+// Hard cap on the annual growth adjustment from any temperature edge, in
+// growth-rate units. A |3pp/yr| permanent shift is already at the outer edge of
+// anything the literature supports; without a cap the quadratic compounds to
+// absurd 2100 levels and makes every plot unreadable. Structural guard.
+// ASYMMETRIC by necessity. Damages are self-limiting (a shrinking economy
+// asymptotes toward zero) so they are NOT capped -- capping them destroyed the
+// project's own validation anchor, pulling India from -87% to -78%. Gains are
+// NOT self-limiting: an unbounded positive growth adjustment compounds for 76
+// years and produced the $140B/capita Canada axis. So gains alone are bounded.
+// Calibrated against BHM's published country projections: with this cap,
+// India -87% / Nigeria -90% (BHM: -87% / -92%) and Russia/Canada +265%
+// (BHM: +419% / +247%). Fallback only; the live value comes from the spec.
+const BHM_GAIN_CAP_DEFAULT = 0.02;
+const IAM_FORMS = {
+  // BHM growth effect, SIGNED. d = (T-Topt)^2 - (Tbase-Topt)^2 measures how much
+  // further from the growth optimum this year's temperature sits vs the
+  // country's baseline climate. d>0 (hot countries warming further past the
+  // optimum) is a growth PENALTY; d<0 (cold countries warming TOWARD the
+  // optimum) is a growth GAIN. This is BHM 2015's own published pattern:
+  // India/Nigeria lose heavily, Russia/Canada gain. (The old max(0,d) clip
+  // silenced the gain side and made the curvature slider look dead for
+  // temperate countries.)
+  bhm_quadratic(C,ctx,T){
+    const d = Math.pow(T-C.Topt,2) - Math.pow(ctx.tBase-C.Topt,2);
+    // d>0: warming further from the optimum  -> growth PENALTY (damages).
+    // d<0: warming TOWARD the optimum        -> growth GAIN, gated by
+    //      bhmGainShare (spec default 0 = damages only).
+    // WHY GATED: BHM's raw quadratic applied to a country whose baseline is far
+    // BELOW the optimum yields an enormous permanent growth bonus every year
+    // (Canada, tBase ~ -4C: d ~ -145 -> +7pp/yr -> ~800x income by 2100, which
+    // then drags Preston life expectancy to ~111 years and collapses fertility).
+    // That is the "climate determinism" critique (Barker 2024) in its most
+    // literal form, and it destroys every shared y-axis in the tab. The gain
+    // side is therefore OFF by default and hard-capped when enabled.
+    const gain = (C.bhmGainShare!=null ? C.bhmGainShare : 1);
+    const cap  = (C.bhmGainCap!=null ? C.bhmGainCap : BHM_GAIN_CAP_DEFAULT);
+    const raw  = C.bhmCurv * (d>0 ? d : d*gain);
+    return raw < 0 ? Math.max(raw, -cap) : raw;   // gains bounded, damages free
+  },
+  // Preston: life-exp contribution = slope * ln(GDP), anchored to baseline.
+  preston_log(C,ctx,gdp){ return C.prestonSlope*Math.log(Math.max(gdp,500)); },
+  // Direct heat mortality on life expectancy: marginal warming beyond baseline,
+  // scaled by the model's OWN coupled income path (adaptation channel).
+  linear_marginal_scaled(C,ctx,T){
+    return C.carletonMort*Math.max(0,T-ctx.tBase)*ctx.incomeScale;
+  },
+  // Fertility-income (demographic transition): coefficient is a shift in total
+  // fertility (births/woman) per unit ln(GDP). Converted to an annual
+  // per-capita growth-rate delta: dTFR / (replacement 2 * generation ~35yr).
+  fertility_income(C,ctx,gdpRatio){
+    const dTFR = C.fertIncome*Math.log(Math.max(gdpRatio,1e-6)); // births shift
+    const GEN=35, REPL=2;
+    return dTFR/(REPL*GEN);
+  },
+  // Heat-mortality -> population: annual loss fraction rising with marginal
+  // warming, income-scaled. Returns a per-year population-shrink fraction.
+  heat_mortality_pop(C,ctx,T){
+    return C.mortPopFeedback*Math.max(0,T-ctx.tBase)*ctx.incomeScale;
+  }
+};
+const edgesTo = to => IAM_EDGES.filter(e=>e.to===to);
+
+function initIAM(){
+  state.iamCoef={}; for(const k in IAM_PARAMS) state.iamCoef[k]=IAM_PARAMS[k].def;
+}
+// Heat-vulnerability scales inversely with income, evaluated on the model's
+// OWN coupled income path: warming that destroys income raises vulnerability,
+// growth reduces it (Carleton et al. 2022 income-adaptation channel).
+// STRUCTURAL choice (flagged kind="structural" in the spec). Reference income
+// $40k => scale 1; clamped to [0.4, 3.0].
+function scaleFromIncome(gv){ return Math.max(0.4,Math.min(3.0,40000/Math.max(gv,500))); }
+
+// ---- deterministic quasi-Monte-Carlo machinery ---------------------------
+// Bands are Monte-Carlo over (a) coefficient uncertainty — each parameter's
+// disputed literature range read as a 95% interval (se from the R spec, or
+// (max-min)/4) — and (b) the CMIP6 inter-model spread, drawn jointly and
+// propagated through the whole chain. Draws are STRATIFIED normal quantiles
+// with fixed coprime strides per dimension, so the band is deterministic
+// (no jitter while dragging a slider) yet covers the joint space.
+const MC_N=32;
+function normInv(p){ // Acklam's rational approximation to the normal quantile
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  const pl=0.02425;
+  if(p<pl){const q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p>1-pl){const q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  const q=p-0.5,r=q*q;
+  return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+}
+const MC_STRIDES=[1,5,7,11,13,17,19,23,29,31];  // odd => coprime with MC_N=32
+function mcZ(dim,k){ const s=MC_STRIDES[dim%MC_STRIDES.length];
+  return normInv((((k*s)%MC_N)+0.5)/MC_N); }
+
+// ---- one full chain integration ------------------------------------------
+// Walks temp -> GDP -> life expectancy -> population for one country under one
+// coefficient vector C and one climate realisation tempAt(y). The spec decides
+// which edges exist; this only walks the years. GDP baseline growth CONVERGES
+// from the country's recent observed rate toward a long-run frontier rate
+// (C.gFrontier) with timescale C.tauConv — constant-growth extrapolation to
+// 2100 is not defensible (Pritchett & Summers 2014; SSP GDP, Dellink 2017).
+function runChainOnce(env,C,tempAt){
+  const gPath={}, lePath={}, popPath={};
+  let g=env.g0;
+  // hoist spec dispatch OUT of the year loop (this runs 32x per country per
+  // render): which forms the spec wires up is decided once per chain.
+  const gdpForms=edgesTo("gdp_per_capita_ppp").map(e=>IAM_FORMS[e.form]).filter(Boolean);
+  const leEdges=edgesTo("life_expectancy");
+  const popEdges=edgesTo("population_total");
+  const hasPreston=leEdges.some(e=>e.form==="preston_log");
+  const hasHeatLE=leEdges.some(e=>e.form==="linear_marginal_scaled");
+  const hasFert=popEdges.some(e=>e.form==="fertility_income");
+  const hasHeatPop=popEdges.some(e=>e.form==="heat_mortality_pop");
+  const p0=hasPreston?IAM_FORMS.preston_log(C,null,env.g0):0;
+  const kConv=1/Math.max(C.tauConv,1), dG=env.base0-C.gFrontier;
+  const ctx={tBase:env.tBase, incomeScale:1};   // reused, mutated per year
+  for(const y of env.years){
+    gPath[y]=g;
+    const T=tempAt(y);
+    ctx.incomeScale=scaleFromIncome(g);
+    if(env.le0!=null){
+      let v=env.le0+(hasPreston?IAM_FORMS.preston_log(C,ctx,g)-p0:0);
+      if(hasHeatLE) v-=IAM_FORMS.linear_marginal_scaled(C,ctx,T);
+      lePath[y]=v;
+    }
+    if(y<Y1){
+      let pen=0;
+      for(let i=0;i<gdpForms.length;i++) pen+=gdpForms[i](C,ctx,T);
+      const gGrowth=C.gFrontier + dG*Math.exp(-(y-env.y0)*kConv);
+      g=g*Math.exp(gGrowth-pen);
+    }
+  }
+  // Population: UN baseline growth each year, bent by the spec's feedback edges.
+  if(env.popYears.length && popEdges.length && env.edgeY!=null){
+    let p=env.popBy[env.edgeY];
+    for(const y of env.popYears){
+      popPath[y]=p;
+      const nextUN=env.popBy[y+1];
+      let unG=(nextUN!=null&&env.popBy[y]!=null)?Math.log(nextUN/env.popBy[y]):0;
+      const T=tempAt(y), gv=gPath[y]!=null?gPath[y]:env.g0;
+      ctx.incomeScale=scaleFromIncome(gv);
+      if(hasFert) unG+=IAM_FORMS.fertility_income(C,ctx,gv/env.g0);
+      if(hasHeatPop) unG-=IAM_FORMS.heat_mortality_pop(C,ctx,T);
+      p=p*Math.exp(unG);
+    }
+  }
+  return {g:gPath,le:lePath,pop:popPath};
+}
+
+// ---- per-country environment (anchors, baselines, climate paths) ----------
+function iamEnv(iso){
+  const temp=rawSeries("mean_temperature",iso);          // scenario-filtered
+  const gdp=rawSeries("gdp_per_capita_ppp",iso);
+  const le=rawSeries("life_expectancy",iso);
+  if(!temp.length||!gdp.length) return null;
+  const gObs=gdp.filter(p=>p.t==="o"); if(!gObs.length) return null;
+  const leObs=le.filter(p=>p.t==="o");
+  const y0=gObs[gObs.length-1].y, g0=gObs[gObs.length-1].v;
+  const le0=leObs.length?leObs[leObs.length-1].v:null;
+  const tBy=Object.fromEntries(temp.map(p=>[p.y,p.v]));
+  const tLo=Object.fromEntries(temp.map(p=>[p.y,p.lo!=null?p.lo:p.v]));
+  const tHi=Object.fromEntries(temp.map(p=>[p.y,p.hi!=null?p.hi:p.v]));
+  // BASELINE climate: the country's temp at the projection start. Effects are
+  // applied to MARGINAL warming beyond this — a hot country's historical
+  // growth already reflects its hot climate.
+  // BASELINE CLIMATE = 20-year climatology, not the single value at y0. One
+  // year carries interannual noise, and since the response is quadratic in
+  // (T - tBase), that noise showed up as spurious "damage" whenever a later
+  // year dipped below the anchor year -- Canada lost 1.6% of 2100 income to
+  // what was purely CMIP6 wiggle, and Japan (sitting almost exactly on the
+  // optimum) lost 5%. A climatology is also what BHM's own baseline means.
+  const CLIM_WIN=20;
+  const tBase=temp.length ? temp.slice(0,Math.min(CLIM_WIN,temp.length))
+                                .reduce((a,p)=>a+p.v,0)/Math.min(CLIM_WIN,temp.length)
+                          : (tBy[y0]!=null?tBy[y0]:14);
+  // recent observed growth rate (~last decade), the starting point that then
+  // converges toward the frontier rate
+  const recent=gObs.slice(-11);
+  let base0=0; for(let i=1;i<recent.length;i++) base0+=Math.log(recent[i].v/recent[i-1].v);
+  base0=recent.length>1?base0/(recent.length-1):0.015;
+  const years=[]; for(let y=y0;y<=Y1;y++) years.push(y);
+  const pop=rawSeries("population_total",iso);
+  const popProj=pop.filter(p=>p.t!=="o");
+  return {iso,years,y0,g0,le0,base0,tBase,tBy,tLo,tHi,
+    gHist:gObs.map(p=>({y:p.y,v:p.v})),
+    leHist:leObs.map(p=>({y:p.y,v:p.v})),
+    popObs:pop.filter(p=>p.t==="o").map(p=>({y:p.y,v:p.v})),
+    popProjRaw:popProj.map(p=>({y:p.y,v:p.v,lo:p.lo,hi:p.hi})),
+    popYears:popProj.map(p=>p.y),
+    edgeY:popProj.length?popProj[0].y:null,
+    popBy:Object.fromEntries(pop.map(p=>[p.y,p.v]))};
+}
+
+// ---- Monte-Carlo bundle per country, cached per render --------------------
+let IAM_CACHE={};   // iso -> bundle; cleared at the top of renderIAMPlots()
+let IAM_LAST_DRAWS={}; // iso -> last full MC draw set, reused while dragging so
+                       // the band stays on screen instead of blinking off/on
+let IAM_FAST=false; // true while a slider is mid-drag: skip MC, band on release
+function paramKeys(){return Object.keys(IAM_PARAMS);}
+function drawCoef(k){ // k-th stratified draw of the full coefficient vector,
+  // centred on the CURRENT slider values, truncated to each param's range.
+  const C={};
+  paramKeys().forEach((pk,dim)=>{
+    const P=IAM_PARAMS[pk];
+    // Params flagged mc:false are structural SWITCHES, not uncertain empirical
+    // coefficients — they stay at the user's setting and are not sampled.
+    if(P.mc===false){ C[pk]=state.iamCoef[pk]; return; }
+    const se=(P.se!=null?P.se:((P.max-P.min)/4))||0;
+    let v=state.iamCoef[pk]+mcZ(dim,k)*se;
+    C[pk]=Math.max(P.min,Math.min(P.max,v));
+  });
+  return C;
+}
+function centralCoef(){const C={};for(const k in IAM_PARAMS)C[k]=state.iamCoef[k];return C;}
+function getIAMBundle(iso){
+  if(IAM_CACHE[iso]!==undefined) return IAM_CACHE[iso];
+  const env=iamEnv(iso);
+  if(!env){IAM_CACHE[iso]=null;return null;}
+  const C0=centralCoef();
+  const tMed=y=>env.tBy[y]!=null?env.tBy[y]:env.tBase;
+  const central=runChainOnce(env,C0,tMed);
+  // NAIVE = same convergence growth baseline, all coupling edges zeroed, no
+  // warming — so the naive-vs-coupled gap isolates what the COUPLING does.
+  const Cnaive=Object.assign({},C0,{bhmCurv:0,carletonMort:0,fertIncome:0,mortPopFeedback:0});
+  const naive=runChainOnce(env,Cnaive,()=>env.tBase);
+  // joint MC draws: coefficients (dims 0..n-1) x climate realisation (dim n).
+  // While a slider is being DRAGGED (IAM_FAST) we skip the draws entirely —
+  // the central + naive lines update live and the band returns on release.
+  const climDim=paramKeys().length;
+  // While dragging, reuse the last full draw set rather than recomputing 32
+  // chains (154ms) or dropping the band entirely (which made every panel
+  // strobe as the band vanished on grab and reappeared on release). The band
+  // is momentarily stale during the drag and snaps to correct on release.
+  if(IAM_FAST && IAM_LAST_DRAWS[env.iso]){
+    IAM_CACHE[iso]={env,central,naive,draws:IAM_LAST_DRAWS[env.iso]};
+    return IAM_CACHE[iso];
+  }
+  const draws=[];
+  for(let k=0;k<(IAM_FAST?0:MC_N);k++){
+    const C=drawCoef(k);
+    const zc=mcZ(climDim,k);
+    const tAt=y=>{const m=env.tBy[y]!=null?env.tBy[y]:env.tBase;
+      const lo=env.tLo[y]!=null?env.tLo[y]:m, hi=env.tHi[y]!=null?env.tHi[y]:m;
+      return zc>=0? m+zc*(hi-m)/1.2816 : m+zc*(m-lo)/1.2816; }; // p10/p90 = ±1.2816σ
+    draws.push(runChainOnce(env,C,tAt));
+  }
+  if(draws.length) IAM_LAST_DRAWS[env.iso]=draws;
+  IAM_CACHE[iso]={env,central,naive,draws};
+  return IAM_CACHE[iso];
+}
+function pctSorted(sorted,q){
+  const i=(sorted.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i);
+  return sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo);
+}
+function bandAt(draws,key,y){
+  const vs=[]; for(const d of draws){const v=d[key][y]; if(v!=null&&isFinite(v))vs.push(v);}
+  if(vs.length<4)return null; vs.sort((a,b)=>a-b);
+  return {lo:pctSorted(vs,0.05),hi:pctSorted(vs,0.95)};
+}
+
+// Run the coupled chain for one country & target indicator. Returns
+// {naive, coupled, obs, y0} in the shape drawIAMPlot expects. The central line
+// is the deterministic run at the current slider values with the median
+// climate; the band is the 5–95% Monte-Carlo envelope.
+function runIAM(iso,target){
+  const B=getIAMBundle(iso); if(!B)return null;
+  const {env,central,naive,draws}=B;
+
+  // ---- Temperature: input/driver, no incoming edges. CMIP6 = projection-only.
+  if(target==="mean_temperature"){
+    const path=env.years.filter(y=>env.tBy[y]!=null).map(y=>({y,v:env.tBy[y]}));
+    const tband=env.years.filter(y=>env.tLo[y]!=null).map(y=>({y,v:env.tBy[y],lo:env.tLo[y],hi:env.tHi[y]}));
+    return {naive:path,coupled:tband,obs:[],y0:env.y0,inputOnly:true};
+  }
+  if(target==="gdp_per_capita_ppp"){
+    const nv=env.years.map(y=>({y,v:naive.g[y]}));
+    const coupled=env.years.map(y=>{const b=bandAt(draws,"g",y);
+      return b?{y,v:central.g[y],lo:b.lo,hi:b.hi}:{y,v:central.g[y]};});
+    return {naive:nv,coupled,obs:env.gHist,y0:env.y0};
+  }
+  if(target==="life_expectancy"&&env.le0!=null){
+    const nv=env.years.map(y=>({y,v:naive.le[y]}));
+    const coupled=env.years.map(y=>{const b=bandAt(draws,"le",y);
+      return b?{y,v:central.le[y],lo:b.lo,hi:b.hi}:{y,v:central.le[y]};});
+    return {naive:nv,coupled,obs:env.leHist,y0:env.y0};
+  }
+  if(target==="population_total"){
+    if(!env.popProjRaw.length){
+      if(!env.popObs.length) return null;
+      return {naive:[],coupled:[],obs:env.popObs,y0:env.y0,inputOnly:true};
+    }
+    const popEdges=edgesTo("population_total");
+    if(!popEdges.length){ // no demographic feedback in spec -> input-only
+      const proj=env.popProjRaw;
+      return {naive:proj,coupled:proj,obs:env.popObs,y0:env.edgeY||env.y0,inputOnly:true};
+    }
+    const nv=env.popProjRaw.map(p=>({y:p.y,v:p.v}));    // UN baseline (uncoupled)
+    const coupled=env.popYears.map(y=>{const b=bandAt(draws,"pop",y);
+      return b?{y,v:central.pop[y],lo:b.lo,hi:b.hi}:{y,v:central.pop[y]};});
+    return {naive:nv,coupled,obs:env.popObs,y0:env.edgeY||env.y0};
+  }
+  return null;
+}
+
+let IAM_RAF=0;
+function scheduleIAMRender(){
+  if(IAM_RAF)return;                      // a render is already queued this frame
+  IAM_RAF=requestAnimationFrame(()=>{IAM_RAF=0;renderIAMPlots();});
+}
+function buildIAMControls(){
+  const host=$("#iamControls"); host.innerHTML="";
+  for(const k in IAM_PARAMS){
+    const P=IAM_PARAMS[k], v=state.iamCoef[k];
+    // Round display to the step's own precision: range inputs return values like
+    // 0.00035000000000000004 for small steps, which rendered raw as noise.
+    const dec=(String(P.step).split(".")[1]||"").length;
+    const fmtV=x=>Number(x).toFixed(dec);
+    // The default marker used to be a centred text label, which read as "the
+    // default is the middle of the range" even when it sits at an end (Topt's
+    // default IS its minimum). Now it is a tick at the true position.
+    const pct=(P.def-P.min)/((P.max-P.min)||1)*100;
+    const d=document.createElement("div");d.className="iam-slider";
+    d.innerHTML=`<div class="sl-top"><span class="sl-name">${P.name}</span><span class="sl-val" id="slv_${k}">${fmtV(v)}${P.unit}</span></div>
+      <div class="sl-track"><input type="range" id="sl_${k}" min="${P.min}" max="${P.max}" step="${P.step}" value="${v}">
+        <span class="sl-tick" style="left:${pct.toFixed(1)}%" title="literature default ${fmtV(P.def)}"></span></div>
+      <div class="sl-range"><span>${fmtV(P.min)}${P.unit}</span><span class="sl-def">default ${fmtV(P.def)}</span><span>${fmtV(P.max)}${P.unit}</span></div>`;
+    host.appendChild(d);
+    const inp=d.querySelector("input");
+    // A drag fires ~60 input events/sec; each render is ~24ms of work even
+    // before the browser lays out the SVG, so rendering per event saturates the
+    // main thread and the handle itself lags. Coalesce to one render per frame.
+    inp.addEventListener("input",e=>{
+      state.iamCoef[k]=parseFloat(e.target.value);
+      $("#slv_"+k).textContent=fmtV(state.iamCoef[k])+P.unit;
+      IAM_FAST=true; scheduleIAMRender();
+    });
+    // pointerup as well as change: `change` does not fire if the pointer is
+    // released outside the slider, which left the band permanently stale.
+    const settle=()=>{IAM_FAST=false; scheduleIAMRender();};
+    inp.addEventListener("change",settle);
+    inp.addEventListener("pointerup",settle);
+    inp.addEventListener("blur",settle);
+  }
+  const rb=document.createElement("button");rb.className="iam-reset";rb.textContent="Reset to literature defaults";
+  rb.onclick=()=>{initIAM();buildCivicSeg();
+buildIAMControls();renderIAMPlots();};
+  host.appendChild(rb);
+}
+function buildIAMCite(){
+  // Generated from the spec's edges so the provenance panel can never drift from
+  // the model — change an edge in R and this text follows on rebuild.
+  const arrow=(f,t)=>({mean_temperature:"temp",gdp_per_capita_ppp:"GDP",life_expectancy:"life exp",population_total:"population"}[f]||f)
+    +" \u2192 "+({mean_temperature:"temp",gdp_per_capita_ppp:"GDP",life_expectancy:"life exp",population_total:"population"}[t]||t);
+  let html=`<b>Coupling edges &amp; sources</b> <span style="opacity:.6">(model defined in R, spec v${(COUPLING&&COUPLING.version)||"?"})</span><br>`;
+  IAM_EDGES.forEach(e=>{
+    const tag=e.kind==="structural"?` <span class="warn">[structural choice, not a fitted coefficient]</span>`:``;
+    html+=`\u2022 <b>${arrow(e.from,e.to)}</b>: ${e.desc||""} <span style="opacity:.7">\u2014 ${e.cite||""}.</span>${tag}`;
+    if(e.contested) html+=` <span class="warn">${e.contested}</span>`;
+    html+=`<br>`;
+  });
+  if(IAM_NOTES){
+    html+=`<br>`;
+    if(IAM_NOTES.driver) html+=`<b>${IAM_NOTES.driver}</b> `;
+    if(IAM_NOTES.uncertainty) html+=`${IAM_NOTES.uncertainty} `;
+    if(IAM_NOTES.provenance) html+=`${IAM_NOTES.provenance}`;
+  }
+  $("#iamCite").innerHTML=html;
+}
+function renderIAM(){ buildIAMControls(); buildIAMCite(); renderIAMPlots(); }
+function renderIAMPlots(){
+  IAM_CACHE={};   // coefficients/scenario/selection may have changed
+  const host=$("#iamStack"); host.innerHTML="";
+  // Every coupled parameter gets its own plot. Temperature & population are the
+  // drivers (input-only for now); GDP & life expectancy are bent by the chain.
+  const targets=[
+    {id:"mean_temperature",label:"Temperature — the forcing",unit:"°C",note:"Model input (CMIP6, "+state.scenario.toUpperCase()+" scenario). Drives the two below."},
+    {id:"gdp_per_capita_ppp",label:"GDP per capita",unit:"intl $ (PPP)",note:"Bent by temperature via the signed Burke–Hsiang–Miguel response: hotter-than-optimum countries lose, colder-than-optimum countries gain. Baseline growth converges to the frontier rate. Band = 5–95% Monte-Carlo over coefficient uncertainty × CMIP6 spread."},
+    {id:"life_expectancy",label:"Life expectancy",unit:"years",note:"Bent by GDP (Preston) and directly by heat (Carleton), with heat-vulnerability tracking the coupled income path. Band = 5–95% Monte-Carlo."},
+    {id:"population_total",label:"Population — now coupled",unit:"people",note:"UN WPP baseline (dotted) bent by income→fertility and heat-mortality feedback (solid). Also scales each country's heat vulnerability."}
+  ];
+  targets.forEach(t=>{
+    const panel=document.createElement("div");panel.className="panel";
+    panel.innerHTML=`<h3>${t.label}</h3><div class="sub">${t.note}</div>`;
+    const svg=el("svg",{});panel.appendChild(svg);
+    const lg=document.createElement("div");lg.className="legend";panel.appendChild(lg);
+    host.appendChild(panel);
+    drawIAMPlot(svg,t,lg);
+  });
+}
+function drawIAMPlot(svg,target,lgHost){
+  clear(svg);
+  const W=1440,H=320,M={t:24,r:20,b:34,l:64};
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const isos=[...state.selected];
+  const runs=isos.map(iso=>({iso,r:runIAM(iso,target.id)})).filter(x=>x.r);
+  if(!runs.length){svg.appendChild(el("text",{x:W/2,y:H/2,"text-anchor":"middle",fill:"#5a6e80"})).textContent="No coupled run — needs mean_temperature + GDP for the selected countries.";return;}
+  // Y-DOMAIN FROM CENTRAL LINES ONLY. Including band edges made the axis jump
+  // every time a drag started/ended (bands vanish during drag) and let one wide
+  // band squash every other country flat. Bands are drawn clipped instead.
+  let lo=Infinity,hi=-Infinity;
+  runs.forEach(({r})=>{
+    [...r.naive,...r.coupled,...(r.obs||[])].forEach(p=>{
+      if(p.v!=null&&isFinite(p.v)){if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;}
+    });
+  });
+  if(!isFinite(lo)||!isFinite(hi)){lo=0;hi=1;}
+  const dom=padDom([lo,hi]);
+  const y0=Math.min(...runs.map(x=>x.r.y0));
+  const fr=timeFrame(svg,W,H,M,target.unit,fmtNum,dom,y0);
+  // clip so a wide uncertainty band can never paint outside the plot area
+  const clipId="iamclip_"+target.id;
+  const defs=el("defs",{});const cp=el("clipPath",{id:clipId});
+  cp.appendChild(el("rect",{x:M.l,y:M.t,width:W-M.l-M.r,height:H-M.t-M.b}));
+  defs.appendChild(cp);svg.appendChild(defs);
+  const g=el("g",{"clip-path":`url(#${clipId})`});svg.appendChild(g);
+  const inputOnly=runs[0].r.inputOnly;
+  runs.forEach(({iso,r})=>{
+    const col=colorOf[iso]||"#37e0c8";
+    // uncertainty fan: climate-model spread propagated through the chain
+    const bandPts=r.coupled.filter(p=>p.lo!=null&&p.hi!=null);
+    if(bandPts.length>1){
+      const top=bandPts.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.hi)).join(" ");
+      const bot=bandPts.slice().reverse().map(p=>"L"+fr.x(p.y)+" "+fr.y(p.lo)).join(" ");
+      g.appendChild(el("path",{d:top+" "+bot+" Z",fill:col,"fill-opacity":0.12,stroke:"none"}));
+    }
+    // observed history (solid, full opacity) flowing into the projection
+    if(r.obs&&r.obs.length>1){
+      g.appendChild(el("path",{d:r.obs.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.v)).join(" "),
+        fill:"none",stroke:col,"stroke-width":2}));
+    }
+    if(!inputOnly){
+      // faint dotted = naive (uncoupled) projection
+      g.appendChild(el("path",{d:r.naive.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.v)).join(" "),
+        fill:"none",stroke:col,"stroke-width":1.4,"stroke-dasharray":"2 3","stroke-opacity":0.55}));
+    }
+    // solid = coupled projection (or the input series when input-only)
+    g.appendChild(el("path",{d:r.coupled.map((p,i)=>(i?"L":"M")+fr.x(p.y)+" "+fr.y(p.v)).join(" "),
+      fill:"none",stroke:col,"stroke-width":2.2}));
+    // hover spans observed + coupled so history is inspectable too
+    registerHover(svg,fr,[...(r.obs||[]),...r.coupled],col,nameByIso[iso],p=>{
+      const nv=r.naive.find(q=>q.y===p.y);
+      const isHist=(r.obs||[]).some(o=>o.y===p.y) && !r.coupled.some(c=>c.y===p.y);
+      const gap=(!inputOnly&&nv&&!isHist)?p.v-nv.v:null;
+      const gapPct=(gap!=null&&nv&&nv.v!==0)?Math.round((p.v/nv.v-1)*1000)/10:null;
+      const band=(p.lo!=null)?`<div class="tr">range ${fmtNum(p.lo)} – ${fmtNum(p.hi)}</div>`:``;
+      return `<div class="ty">${nameByIso[iso]} · ${p.y}${isHist?" · observed":""}</div>
+        <div class="tv">${fmtNum(p.v)} ${target.unit}</div>`+
+        (gap!=null?`<div class="tr">vs naive ${fmtNum(nv.v)} · ${gapPct>=0?"+":""}${gapPct}% from coupling</div>`:``)+band;
+    });
+    const d=document.createElement("div");d.className="lg";
+    d.innerHTML=`<span class="sw" style="background:${col}"></span>${nameByIso[iso]}`;lgHost.appendChild(d);
+  });
+}
+
+// ============ PLOT TAB (indicator families, full bands) ============
+const MODULES=[...new Set(META.indicators.map(i=>i.module))].sort();
+const indByMod=m=>META.indicators.filter(i=>i.module===m);
+function buildFamilySeg(){
+  $("#familySeg").innerHTML=MODULES.map((m,i)=>
+    `<button data-m="${m}"${i===0?' class="on"':''}>${m}</button>`).join("");
+  $("#familySeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    state.family=b.dataset.m; $$("#familySeg button").forEach(x=>x.classList.toggle("on",x===b)); renderPlot();});
+}
+function renderPlot(){
+  $$("#familySeg button").forEach(x=>x.classList.toggle("on",x.dataset.m===state.family));
+  const host=$("#plotStack"); host.innerHTML="";
+  indByMod(state.family).forEach(meta=>{
+    const panel=document.createElement("div");panel.className="panel";
+    const dirTxt=meta.direction==="higher_is_better"?"higher is better":"higher is worse";
+    panel.innerHTML=`<h3>${meta.label}</h3><div class="sub">${uLabel(meta.unit)} · ${dirTxt}${meta.is_climate?" · scenario-dependent (band = inter-model spread)":" · band = 95% interval where available"}</div>`;
+    const svg=el("svg",{id:"plot_"+meta.id});panel.appendChild(svg);
+    const lg=document.createElement("div");lg.className="legend";panel.appendChild(lg);
+    host.appendChild(panel);
+    drawFullPlot(svg,meta,lg);
+  });
+}
+function drawFullPlot(svg,meta,lgHost){
+  clear(svg);
+  const W=1440,H=340,M={t:24,r:20,b:34,l:62};
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const isos=[...state.selected];
+  if(!isos.length){svg.appendChild(el("text",{x:W/2,y:H/2,"text-anchor":"middle",fill:"#5a6e80"})).textContent="Select countries above.";return;}
+  const dom=padDom(valExtent([meta.id],isos,{band:true}));
+  let edge=-Infinity; isos.forEach(iso=>rawSeries(meta.id,iso).forEach(p=>{if(p.t==="o"&&p.y>edge)edge=p.y;}));
+  const fr=timeFrame(svg,W,H,M,uLabel(meta.unit),fmtNum,dom,edge===-Infinity?null:edge);
+  const g=el("g",{});svg.appendChild(g);
+  isos.forEach(iso=>{
+    // full plot ALWAYS shows the band (this is the point of the tab)
+    drawCountryLine(g,rawSeries(meta.id,iso),colorOf[iso],fr,{name:nameByIso[iso],band:true,svg,fr,
+      tip:p=>`<div class="ty">${nameByIso[iso]} · ${p.y}</div><div class="tv">${valUnit(p.v,meta.unit)}</div>${p.lo!=null?`<div class="tr">95% / spread: ${valUnit(p.lo,meta.unit)} – ${valUnit(p.hi,meta.unit)}</div>`:""}`});
+  });
+  // legend
+  isos.forEach(iso=>{const d=document.createElement("div");d.className="lg";
+    d.innerHTML=`<span class="sw" style="background:${colorOf[iso]}"></span>${nameByIso[iso]}`;lgHost.appendChild(d);});
+}
+
+// ============ SCORECARD TAB (one country, all indicators, grid -> expand) ============
+function buildScPicker(){
+  $("#scSel").innerHTML=META.countries.map(c=>`<option value="${c.iso}">${c.name}</option>`).join("");
+  $("#scSel").addEventListener("change",()=>{state.scCountry=$("#scSel").value;state.scExpanded=null;renderScorecard();});
+}
+function trendOf(meta,pts){
+  const obs=pts.filter(p=>p.t==="o");
+  const last=obs.slice(-1)[0]||pts.slice(-1)[0];
+  const ref=obs.find(p=>p.y>=(last?last.y:0)-8)||obs[0]||pts[0];
+  let dir="flat",arrow="→",word="stable";
+  if(last&&ref&&last.y!==ref.y){const sl=(last.v-ref.v)/(last.y-ref.y);
+    if(Math.abs(sl)>1e-9){const good=meta.direction==="higher_is_better"?sl>0:sl<0;
+      dir=good?"up":"down";arrow=sl>0?"↑":"↓";word=good?"improving":"worsening";}}
+  return {last,dir,arrow,word};
+}
+function renderScorecard(){
+  const iso=state.scCountry, grid=$("#scGrid"); grid.innerHTML="";
+  const mods={};
+  META.indicators.forEach(m=>{ if(DATA[m.id]&&DATA[m.id][iso]) (mods[m.module]=mods[m.module]||[]).push(m); });
+  // default the right pane to the first available indicator if none chosen yet
+  if(!state.scExpanded || !(DATA[state.scExpanded]&&DATA[state.scExpanded][iso])){
+    outer: for(const mod of MODULES){ if(mods[mod]){ for(const m of mods[mod]){ if(rawSeries(m.id,iso).length){state.scExpanded=m.id;break outer;} } } }
+  }
+  MODULES.forEach(mod=>{
+    if(!mods[mod])return;
+    const sec=document.createElement("div");sec.className="sc-module";
+    sec.innerHTML=`<h4>${mod}</h4>`;
+    const gr=document.createElement("div");gr.className="sc-grid";sec.appendChild(gr);
+    mods[mod].forEach(meta=>{
+      const pts=rawSeries(meta.id,iso); if(!pts.length)return;
+      const {last,dir,arrow,word}=trendOf(meta,pts);
+      const tile=document.createElement("div");tile.className="sc-tile"+(meta.id===state.scExpanded?" sel":"");
+      tile.dataset.id=meta.id;
+      tile.innerHTML=`<div class="tname">${meta.label.split(" (")[0]}</div>
+        <div class="tval">${fmtNum(last?last.v:NaN)}</div>
+        <div class="tyr">${uLabel(meta.unit)} · ${last?last.y:""}</div>
+        <div class="ttrend ${dir}">${arrow} ${word}</div>`;
+      tile.onclick=()=>{state.scExpanded=meta.id;
+        $$("#scGrid .sc-tile").forEach(t=>t.classList.toggle("sel",t.dataset.id===meta.id));
+        renderScExpand();};
+      gr.appendChild(tile);
+    });
+    grid.appendChild(sec);
+  });
+  renderScExpand();
+}
+function renderScExpand(){
+  const host=$("#scExpand");host.innerHTML="";
+  if(!state.scExpanded){host.innerHTML='<div class="sc-expand"><div class="sc-empty">Select an indicator on the left to plot it here.</div></div>';return;}
+  const meta=META.indicators.find(i=>i.id===state.scExpanded);if(!meta)return;
+  const iso=state.scCountry;
+  const wrap=document.createElement("div");wrap.className="sc-expand";
+  const dirTxt=meta.direction==="higher_is_better"?"higher is better":"higher is worse";
+  wrap.innerHTML=`<div class="xh"><div><b>${meta.label}</b> <span style="color:var(--faint);font-size:12px">· ${uLabel(meta.unit)} · ${dirTxt}</span></div></div>`;
+  const svg=el("svg",{});wrap.appendChild(svg);
+  host.appendChild(wrap);
+  // single-country full detailed plot with band
+  clear(svg);
+  const W=760,H=460,M={t:26,r:18,b:34,l:60};
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+  svg.style.width="100%";svg.style.height="auto";
+  const pts=rawSeries(meta.id,iso);
+  const dom=padDom(valExtent([meta.id],[iso],{band:true}));
+  let edge=-Infinity; pts.forEach(p=>{if(p.t==="o"&&p.y>edge)edge=p.y;});
+  const fr=timeFrame(svg,W,H,M,uLabel(meta.unit),fmtNum,dom,edge===-Infinity?null:edge);
+  const g=el("g",{});svg.appendChild(g);
+  drawCountryLine(g,pts,colorOf[iso]||"#37e0c8",fr,{name:nameByIso[iso],band:true,svg,fr,
+    tip:p=>`<div class="ty">${nameByIso[iso]} · ${p.y}</div><div class="tv">${valUnit(p.v,meta.unit)}</div>${p.lo!=null?`<div class="tr">95% / spread: ${valUnit(p.lo,meta.unit)} – ${valUnit(p.hi,meta.unit)}</div>`:""}`});
+}
+
+$("#gen").textContent="generated "+META.generated+" · born "+BIRTH;
+$("#foot").innerHTML="Time axis fixed 1990–2100. <b style='color:var(--accent)'>NOW</b> = "+NOW+
+  " (your system date, teal line). The <span style='color:var(--accent2)'>amber dotted line</span> in each panel marks where that indicator's observed data ends and projection begins — it differs per indicator, and the gap to NOW shows how current each source is. Faint vertical lines mark your age milestones. Solid = observed, dashed = projected. V-Dem governance indices are expert-coded; climate is CMIP6 model output (band = model spread); demographic projections carry the UN's prediction interval.";
+buildRefPicker(); buildFamilySeg(); buildScPicker();
+assignColors(); buildChips(); renderWorld();
+</script>
+</body>
+</html>

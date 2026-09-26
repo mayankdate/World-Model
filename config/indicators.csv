@@ -1,0 +1,53 @@
+indicator,module,source,source_id,unit,direction,description,weight
+gdp_per_capita_ppp,economy,worldbank,NY.GDP.PCAP.PP.KD,constant_2021_intl_dollars,higher_is_better,GDP per capita PPP (constant 2021 intl $),0.3
+gdp_growth,economy,worldbank,NY.GDP.MKTP.KD.ZG,percent,higher_is_better,GDP growth (annual %),0.1
+inflation_cpi,economy,worldbank,FP.CPI.TOTL.ZG,percent,lower_is_better,Inflation consumer prices (annual %),0.1
+gini_index,economy,worldbank,SI.POV.GINI,index_0_100,lower_is_better,Gini income inequality,0.15
+poverty_headcount_ratio,economy,worldbank,SI.POV.DDAY,percent,lower_is_better,Poverty headcount $2.15/day,0.2
+gross_savings_pct_gdp,economy,worldbank,NY.GNS.ICTR.ZS,percent_gdp,higher_is_better,Gross savings (% GDP),0.05
+gross_capital_formation_pct_gdp,economy,worldbank,NE.GDI.TOTL.ZS,percent_gdp,higher_is_better,Gross capital formation (% GDP),0.05
+trade_pct_gdp,economy,worldbank,NE.TRD.GNFS.ZS,percent_gdp,higher_is_better,Trade as % of GDP,0.05
+unemployment_rate,labor,worldbank,SL.UEM.TOTL.ZS,percent,lower_is_better,Unemployment total (% labor force ILO),0.3
+youth_unemployment_rate,labor,worldbank,SL.UEM.1524.ZS,percent,lower_is_better,Unemployment ages 15-24 (% ILO),0.2
+labor_force_participation,labor,worldbank,SL.TLF.CACT.ZS,percent,higher_is_better,Labor force participation (% pop 15+),0.2
+female_labor_participation,labor,worldbank,SL.TLF.CACT.FE.ZS,percent,higher_is_better,Female labor participation (% female 15+),0.15
+vulnerable_employment,labor,worldbank,SL.EMP.VULN.ZS,percent,lower_is_better,Vulnerable employment (% total employment),0.15
+life_expectancy,health,worldbank,SP.DYN.LE00.IN,years,higher_is_better,Life expectancy at birth (years),0.3
+infant_mortality,health,worldbank,SP.DYN.IMRT.IN,per_1000_live_births,lower_is_better,Infant mortality (per 1000 live births),0.2
+maternal_mortality,health,worldbank,SH.STA.MMRT,per_100k_live_births,lower_is_better,Maternal mortality (per 100k live births),0.15
+physicians_per_1000,health,worldbank,SH.MED.PHYS.ZS,per_1000_people,higher_is_better,Physicians (per 1000 people),0.1
+health_expenditure_pct_gdp,health,worldbank,SH.XPD.CHEX.GD.ZS,percent_gdp,higher_is_better,Current health expenditure (% GDP),0.15
+hospital_beds_per_1000,health,worldbank,SH.MED.BEDS.ZS,per_1000_people,higher_is_better,Hospital beds (per 1000 people),0.1
+population_growth,demographics,worldbank,SP.POP.GROW,percent,higher_is_better,Population growth (annual %),0.2
+fertility_rate,demographics,worldbank,SP.DYN.TFRT.IN,births_per_woman,higher_is_better,Fertility rate (births per woman),0.2
+dependency_ratio,demographics,worldbank,SP.POP.DPND,percent,lower_is_better,Age dependency ratio (% working-age),0.4
+urban_population_share,demographics,worldbank,SP.URB.TOTL.IN.ZS,percent,higher_is_better,Urban population (% of total),0.2
+liberal_democracy_index,rights,owid,liberal-democracy-index,index_0_1,higher_is_better,Liberal democracy index (V-Dem via OWID),0.25
+electoral_democracy_index,rights,owid,electoral-democracy-index,index_0_1,higher_is_better,Electoral democracy index (V-Dem via OWID),0.2
+participatory_democracy_index,rights,owid,participatory-democracy-index,index_0_1,higher_is_better,Participatory democracy index (V-Dem via OWID),0.1
+deliberative_democracy_index,rights,owid,deliberative-democracy-index-vdem,index_0_1,higher_is_better,Deliberative democracy index (V-Dem via OWID),0.1
+egalitarian_democracy_index,rights,owid,egalitarian-democracy-index-vdem,index_0_1,higher_is_better,Egalitarian democracy index (V-Dem via OWID),0.1
+freedom_of_expression_index,rights,owid,freedom-of-expression-index,index_0_1,higher_is_better,Freedom of expression index (V-Dem via OWID),0.15
+freedom_of_association_index,rights,owid,freedom-of-association-index,index_0_1,higher_is_better,Freedom of association index (V-Dem via OWID),0.1
+political_polarization,rights,owid,political-polarization-score,index_0_4,lower_is_better,"Political polarization score (V-Dem v2cacamps via OWID; 0-4, higher=more polarized)",0.1
+academic_freedom,rights,owid,academic-freedom-index,index_0_1,higher_is_better,Academic freedom index (V-Dem via OWID),0.1
+liberal_component_index,stability,owid,liberal-political-institutions-index,index_0_1,higher_is_better,Liberal component index (V-Dem via OWID),0.25
+political_corruption_index,stability,owid,political-corruption-index,index_0_1,lower_is_better,Political corruption index (V-Dem via OWID; higher=more corrupt),0.25
+rule_of_law_index,stability,owid,rule-of-law-index,index_0_1,higher_is_better,Rule of law index (V-Dem via OWID),0.25
+judicial_constraints_executive,stability,owid,judicial-constraints-on-the-executive-index,index_0_1,higher_is_better,Judicial constraints on the executive (V-Dem via OWID),0.25
+co2_per_capita,climate,owid,co-emissions-per-capita,tonnes_per_capita,lower_is_better,CO2 emissions per capita (OWID),0.25
+renewable_electricity_share,climate,owid,share-electricity-renewables,percent,higher_is_better,Renewable electricity share (OWID),0.2
+air_pollution_death_rate,climate,owid,outdoor-pollution-death-rate,per_100k,lower_is_better,Outdoor air pollution death rate (IHME GBD via OWID),0.2
+forest_area_share,climate,worldbank,AG.LND.FRST.ZS,percent_land,higher_is_better,Forest area (% land),0.15
+pm25_exposure,climate,worldbank,EN.ATM.PM25.MC.M3,ug_per_m3,lower_is_better,PM2.5 mean annual exposure,0.2
+internet_users_share,technology,owid,share-of-individuals-using-the-internet,percent,higher_is_better,"Internet users (% population, OWID)",0.3
+mobile_subscriptions,technology,worldbank,IT.CEL.SETS.P2,per_100_people,higher_is_better,Mobile cellular subscriptions,0.15
+rd_expenditure_pct_gdp,technology,worldbank,GB.XPD.RSDV.GD.ZS,percent_gdp,higher_is_better,Research and development expenditure (% GDP),0.3
+high_tech_exports_share,technology,worldbank,TX.VAL.TECH.MF.ZS,percent_manufactured_exports,higher_is_better,High-technology exports (% manufactured exports),0.25
+population_total,demographics,unwpp,49,persons,higher_is_better,Total population (UN WPP medium + 95% PI),0
+median_age,demographics,unwpp,67,years,higher_is_better,Median age (UN WPP),0
+fertility_rate_proj,demographics,unwpp,19,births_per_woman,higher_is_better,Total fertility rate projected (UN WPP),0
+life_expectancy_proj,demographics,unwpp,61,years,higher_is_better,Life expectancy projected (UN WPP),0
+mean_temperature,climate,cckp,tas,celsius,lower_is_better,Mean annual near-surface air temp (CMIP6/CCKP),0
+max_temperature,climate,cckp,tasmax,celsius,lower_is_better,Annual max near-surface air temp (CMIP6/CCKP),0
+heat_index_days_over_35c,climate,cckp,hi35,days,lower_is_better,Days/yr heat index >35C - livability proxy (CMIP6/CCKP),0
