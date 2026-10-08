@@ -127,7 +127,7 @@ inject <- sprintf("const META=%s;\nconst DATA=%s;\nconst COUPLING=%s;",
                   meta_json, payload_json, coupling_json)
 html <- sub("__DATA__", inject, tpl, fixed = TRUE)
 
-out_path <- file.path(PATHS$output, "dashboard.html")
+out_path <- file.path("docs/dashboard.html")
 writeLines(html, out_path)
 log_info("Wrote ", out_path, " (", round(file.size(out_path)/1e6, 1), " MB)")
 log_info("Open it directly in any browser — no server, no internet, no dependencies.")
