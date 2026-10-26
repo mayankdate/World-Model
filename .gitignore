@@ -1,3 +1,47 @@
+# ============================================================
+# Journal_Notion / Life Calendar — .gitignore
+# ============================================================
+# This is a PERSONAL journal pipeline. The single most important
+# rule: never commit the journal contents, the scored data, the
+# generated dashboards, or any API credentials. Treat everything
+# derived from your entries as private by default.
+# ============================================================
+
+# ---------- SECRETS / CREDENTIALS (highest priority) ----------
+notion_token.txt
+openai_key.txt
+*_key.txt
+*_token.txt
+.Renviron
+.env
+.env.*
+# The shared API-keys folder referenced by the LLM pass
+00.APIKeys/
+
+# ---------- PRIVATE DATA (your journal — never commit) ----------
+# Source-of-truth workbook and all its variants
+Output/journal_enriched.xlsx
+Output/journal_LLM_context.csv
+Output/*.xlsx
+Output/*.csv
+Output/*.json
+Output/*.png
+Output/*.html
+0x_Timelines.R
+0x1_SQuad.R
+
+# Generated dashboards (contain full entry text)
+life_dashboard.html
+life_dashboard_demo.html
+Output/Life_Timeline.html
+Output/timeline_data.json
+
+# Any stray data drops
+Data/
+*.xlsx
+*.xlsm
+!**/templates/*.xlsx      # (allow template stubs if you ever add them)
+
 # ---------- R ----------
 .Rproj.user/
 .Rhistory
@@ -23,6 +67,11 @@ __pycache__/
 Thumbs.db
 desktop.ini
 
-# ---------- Project ----------
-data/raw
-V0_Build
+# ---------- Explicitly KEEP (whitelist the code) ----------
+# Scripts, templates, and docs are safe to track. They are not
+# ignored above, but listed here for clarity of intent:
+#   Scripts/*.R
+#   Scripts/*.ipynb
+#   Scripts/03.5_Calendar_base.html
+#   Scripts/timeline_template.html
+#   README.md
